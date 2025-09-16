@@ -11,7 +11,7 @@ dotenv.config();
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY; // SERVICE key - keep secret
-const BUCKET = process.env.SUPABASE_BUCKET || 'uploads';
+const BUCKET = process.env.SUPABASE_BUCKET || 'Receive_Files';
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
   console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in env');
