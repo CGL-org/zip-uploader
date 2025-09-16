@@ -8,40 +8,7 @@
   <h1>Files in bucket</h1>
   <ul id="file-list">Loading…</ul>
 
-  <script>
-    async function loadFiles() {
-      try {
-        const res = await fetch("/files");
-        if (!res.ok) throw new Error("Failed to fetch /files");
-
-        const result = await res.json();
-        const files = result.files || [];  // ✅ FIX: look inside .files
-
-        const list = document.getElementById("file-list");
-        list.innerHTML = "";
-
-        if (files.length === 0) {
-          list.innerHTML = "<li>No files found</li>";
-          return;
-        }
-
-        files.forEach(file => {
-          const li = document.createElement("li");
-          const link = document.createElement("a");
-          link.href = file.publicUrl;
-          link.textContent = file.name;
-          link.target = "_blank";
-          li.appendChild(link);
-          list.appendChild(li);
-        });
-      } catch (err) {
-        console.error(err);
-        document.getElementById("file-list").innerHTML =
-          "<li>Error loading files</li>";
-      }
-    }
-
-    loadFiles();
-  </script>
+  <!-- ✅ External JS file instead of inline -->
+  <script src="app.js"></script>
 </body>
 </html>
