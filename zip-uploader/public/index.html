@@ -1,21 +1,47 @@
-<!doctype html>
-<html>
-<head><meta charset="utf-8"><title>Files</title></head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Files in bucket</title>
+</head>
 <body>
   <h1>Files in bucket</h1>
-  <div id="files">Loading…12345</div>
+  <ul id="file-list">Loading…</ul>
+
   <script>
-    async function load() {
-      const res = await fetch('/files');
-      const js = await res.json();
-      const root = document.getElementById('files');
-      if (!js.files) { root.innerText = JSON.stringify(js); return; }
-      root.innerHTML = '<ul>' + js.files.map(f => {
-        const link = f.publicUrl ? `<a href="${f.publicUrl}" target="_blank">${f.name}</a>` : f.name;
-        return `<li>${link} — ${f.size ?? 'n/a'} bytes</li>`;
-      }).join('') + '</ul>';
+    async function loadFiles() {
+      try {
+        const res = await fetch("/files");
+        if (!res.ok) throw new Error("Failed to fetch /files");
+
+        const result = await res.json();
+        const files = result.files || [];  // ✅ FIX: look inside .files
+
+        const list = document.getElementById("file-list");
+        list.innerHTML = "";
+
+        if (files.length === 0) {
+          list.innerHTML = "<li>No files found</li>";
+          return;
+        }
+
+        files.forEach(file => {
+          const li = document.createElement("li");
+          const link = document.createElement("a");
+          link.href = file.publicUrl;
+          link.textContent = file.name;
+          link.target = "_blank";
+          li.appendChild(link);
+          list.appendChild(li);
+        });
+      } catch (err) {
+        console.error(err);
+        document.getElementById("file-list").innerHTML =
+          "<li>Error loading files</li>";
+      }
     }
-    load();
+
+    loadFiles();
   </script>
 </body>
 </html>
