@@ -1,4 +1,4 @@
-// index.js  (ESM)
+// index.js
 import express from 'express';
 import multer from 'multer';
 import AdmZip from 'adm-zip';
@@ -10,7 +10,7 @@ import cors from 'cors';
 dotenv.config();
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY; // SERVICE key - keep secret
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const BUCKET = process.env.SUPABASE_BUCKET || 'Receive_Files';
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
@@ -21,7 +21,19 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const app = express();
-app.use(helmet());
+
+// ✅ Helmet with CSP (disallows inline scripts, but allows self-hosted JS)
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      useDefaults: true,
+      directives: {
+        "script-src": ["'self'"], // only allow JS from same server
+      },
+    },
+  })
+);
+
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
@@ -29,7 +41,7 @@ app.use(express.static('public'));
 const storage = multer.memoryStorage();
 const upload = multer({
   storage,
-  limits: { fileSize: 1024 * 1024 * 500 } // example: 500MB limit - tune per needs
+  limits: { fileSize: 1024 * 1024 * 500 }
 });
 
 // Upload & extract endpoint
@@ -44,18 +56,15 @@ app.post('/upload-zip', upload.single('file'), async (req, res) => {
     for (const entry of entries) {
       if (entry.isDirectory) continue;
 
-      // normalize & sanitize path to prevent traversal
       let raw = entry.entryName.replace(/\\/g, '/');
-      // remove any leading slashes and .. segments
       const parts = raw.split('/').filter(p => p && p !== '..');
       const safePath = parts.join('/');
 
       if (!safePath) continue;
 
-      const data = entry.getData(); // Buffer
+      const data = entry.getData();
 
-      // Upload to Supabase storage (path = safePath)
-      const { data: upData, error: upErr } = await supabase.storage
+      const { error: upErr } = await supabase.storage
         .from(BUCKET)
         .upload(safePath, data, { upsert: true });
 
@@ -73,17 +82,15 @@ app.post('/upload-zip', upload.single('file'), async (req, res) => {
   }
 });
 
-// List files (works best if bucket is public; otherwise create signed URLs)
+// List files
 app.get('/files', async (req, res) => {
   try {
     const { data, error } = await supabase.storage.from(BUCKET).list('', { limit: 1000 });
     if (error) return res.status(500).json({ error: error.message });
 
-    // build public URLs (only valid if bucket is public)
     const files = data.map(f => {
       const g = supabase.storage.from(BUCKET).getPublicUrl(f.name);
-      const publicUrl = g?.data?.publicUrl || null;
-      return { ...f, publicUrl };
+      return { ...f, publicUrl: g?.data?.publicUrl || null };
     });
 
     res.json({ files });
