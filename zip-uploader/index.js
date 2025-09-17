@@ -34,9 +34,26 @@ const upload = multer({
   limits: { fileSize: 1024 * 1024 * 500 }, // 500MB max
 });
 
-// ✅ Root route
-app.get("/", (req, res) => {
-  res.send("🚀 Zip uploader backend running → POST /upload-zip to upload");
+// 🔄 Function to get file list
+async function getFileList() {
+  const { data, error } = await supabase.storage.from(BUCKET).list("", { limit: 1000 });
+
+  if (error) throw new Error(error.message);
+
+  return data.map((f) => {
+    const g = supabase.storage.from(BUCKET).getPublicUrl(f.name);
+    return { ...f, publicUrl: g?.data?.publicUrl || null };
+  });
+}
+
+// ✅ Root route → now shows bucket contents
+app.get("/", async (req, res) => {
+  try {
+    const files = await getFileList();
+    res.json({ files });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ✅ Upload ZIP only (no extraction)
@@ -65,23 +82,12 @@ app.post("/upload-zip", upload.single("file"), async (req, res) => {
   }
 });
 
-// ✅ List files in bucket
+// ✅ List files (still available)
 app.get("/files", async (req, res) => {
   try {
-    const { data, error } = await supabase.storage
-      .from(BUCKET)
-      .list("", { limit: 1000 });
-
-    if (error) return res.status(500).json({ error: error.message });
-
-    const files = data.map((f) => {
-      const g = supabase.storage.from(BUCKET).getPublicUrl(f.name);
-      return { ...f, publicUrl: g?.data?.publicUrl || null };
-    });
-
+    const files = await getFileList();
     res.json({ files });
   } catch (err) {
-    console.error("❌ File list error", err);
     res.status(500).json({ error: err.message });
   }
 });
