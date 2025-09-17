@@ -50,7 +50,45 @@ async function getFileList() {
 app.get("/", async (req, res) => {
   try {
     const files = await getFileList();
-    res.json({ files });
+       let html = `
+      <html>
+      <head>
+        <title>Bucket Files</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f4; }
+          h1 { color: #333; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #fff; }
+          th, td { padding: 10px; border: 1px solid #ccc; text-align: left; }
+          th { background: #eee; }
+          a { color: #007bff; text-decoration: none; }
+          a:hover { text-decoration: underline; }
+        </style>
+      </head>
+      <body>
+        <h1>📂 Files in Bucket: ${BUCKET}</h1>
+        <table>
+          <tr><th>Name</th><th>Type</th><th>Size</th><th>Last Modified</th><th>Link</th></tr>
+    `;
+
+    files.forEach(file => {
+      html += `
+        <tr>
+          <td>${file.name}</td>
+          <td>${file.metadata?.mimetype || "N/A"}</td>
+          <td>${file.metadata?.size || "?"} bytes</td>
+          <td>${file.updated_at || "N/A"}</td>
+          <td><a href="${file.publicUrl}" target="_blank">Open</a></td>
+        </tr>
+      `;
+    });
+
+    html += `
+        </table>
+      </body>
+      </html>
+    `;
+
+    res.send(html);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
