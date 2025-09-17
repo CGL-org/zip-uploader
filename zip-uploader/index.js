@@ -34,12 +34,12 @@ const upload = multer({
   limits: { fileSize: 1024 * 1024 * 500 }, // 500MB max
 });
 
-// ✅ Root route for testing
+// ✅ Root route
 app.get("/", (req, res) => {
-  res.send("🚀 Zip uploader backend is running. Use POST /upload-zip to upload.");
+  res.send("🚀 Zip uploader backend running → POST /upload-zip to upload");
 });
 
-// ✅ Upload ZIP (store as raw .zip file in Supabase)
+// ✅ Upload ZIP only (no extraction)
 app.post("/upload-zip", upload.single("file"), async (req, res) => {
   if (!req.file)
     return res.status(400).json({ error: "No file attached (field name = file)" });
@@ -48,6 +48,7 @@ app.post("/upload-zip", upload.single("file"), async (req, res) => {
     const fileName = req.file.originalname;
     const fileBuffer = req.file.buffer;
 
+    // Upload .zip file to bucket
     const { error } = await supabase.storage
       .from(BUCKET)
       .upload(fileName, fileBuffer, {
@@ -55,10 +56,7 @@ app.post("/upload-zip", upload.single("file"), async (req, res) => {
         contentType: "application/zip",
       });
 
-    if (error) {
-      console.error("❌ Supabase upload error:", error);
-      return res.status(500).json({ error: error.message });
-    }
+    if (error) throw error;
 
     res.json({ ok: true, uploaded: fileName });
   } catch (err) {
@@ -67,6 +65,29 @@ app.post("/upload-zip", upload.single("file"), async (req, res) => {
   }
 });
 
+// ✅ List files in bucket
+app.get("/files", async (req, res) => {
+  try {
+    const { data, error } = await supabase.storage
+      .from(BUCKET)
+      .list("", { limit: 1000 });
+
+    if (error) return res.status(500).json({ error: error.message });
+
+    const files = data.map((f) => {
+      const g = supabase.storage.from(BUCKET).getPublicUrl(f.name);
+      return { ...f, publicUrl: g?.data?.publicUrl || null };
+    });
+
+    res.json({ files });
+  } catch (err) {
+    console.error("❌ File list error", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 🚀 Start server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✅ Server listening on port ${PORT}`));
+app.listen(PORT, () =>
+  console.log(`✅ Server listening on port ${PORT}`)
+);
