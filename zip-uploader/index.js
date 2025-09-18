@@ -24,7 +24,11 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 const app = express();
 
 // Middleware
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: false
+  })
+);
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -183,7 +187,7 @@ app.get("/", requireLogin, async (req, res) => {
         .sidebar {
           position: fixed;
           top: 0;
-          left: -260px;                /* hidden off-screen */
+          left: -300px;                /* hidden off-screen */
           width: 260px;
           height: 100vh;
           background: rgba(0,0,0,0.85);
@@ -194,7 +198,7 @@ app.get("/", requireLogin, async (req, res) => {
           z-index: 1200;              /* ABOVE the topnav so it is visible */
           box-shadow: 6px 0 20px rgba(0,0,0,0.2);
         }
-        .sidebar.active { left:0; }
+        .sidebar.active { left:0; background:red !important; }
         .sidebar a {
           display:block;
           padding:14px 20px;
@@ -312,6 +316,16 @@ app.get("/", requireLogin, async (req, res) => {
       if (e.key === 'Escape' && sidebar.classList.contains('active')) closeSidebar();
     });
   })();
+
+
+  menuBtn.addEventListener('click', function(e){
+  console.log("Menu clicked");   // ✅ should show in browser console
+  e.stopPropagation();
+  sidebar.classList.toggle('active');
+  const expanded = sidebar.classList.contains('active');
+  menuBtn.setAttribute('aria-expanded', expanded.toString());
+});
+
 </script>
 
     </body>
