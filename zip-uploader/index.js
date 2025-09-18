@@ -26,7 +26,7 @@ const app = express();
 // Middleware
 app.use(
   helmet({
-    contentSecurityPolicy: false
+    contentSecurityPolicy: false // allow inline scripts
   })
 );
 app.use(cors());
@@ -190,15 +190,15 @@ app.get("/", requireLogin, async (req, res) => {
           left: -300px;                /* hidden off-screen */
           width: 260px;
           height: 100vh;
-          background: rgba(0,0,0,0.85);
+          background: rgba(0,0,0,0.9);
           backdrop-filter: blur(12px);
           color: #fff;
           padding-top: 64px;          /* leave space for the topnav */
-          transition: left 260ms cubic-bezier(0.2,0.8,0.2,1);
-          z-index: 1200;              /* ABOVE the topnav so it is visible */
+          transition: left 300ms ease;
+          z-index: 1200;
           box-shadow: 6px 0 20px rgba(0,0,0,0.2);
         }
-        .sidebar.active { left:0; background:red !important; }
+        .sidebar.active { left:0; }
         .sidebar a {
           display:block;
           padding:14px 20px;
@@ -206,16 +206,14 @@ app.get("/", requireLogin, async (req, res) => {
           text-decoration:none;
           font-size:1rem;
         }
-        .sidebar a:hover { background: rgba(255,255,255,0.06); }
+        .sidebar a:hover { background: rgba(255,255,255,0.1); }
+
         /* Content */
         .content {
           margin-left:20px;
           padding:20px;
-          transition: margin-left 0.3s;
         }
-        .content.shifted { margin-left:240px; }
 
-        h1 { color:#333; font-size:1.5em; margin-bottom:10px; }
         h2 { color:#555; font-size:1.2em; margin-bottom:15px; }
 
         .table-wrapper {
@@ -241,7 +239,6 @@ app.get("/", requireLogin, async (req, res) => {
         a:hover { text-decoration:underline; }
 
         @media(max-width:768px){
-          .content.shifted { margin-left:0; }
           table { min-width:100%; }
         }
       </style>
@@ -249,7 +246,7 @@ app.get("/", requireLogin, async (req, res) => {
     <body>
       <div class="topnav">
         <div>✅ Welcome, ${req.session.user.username}</div>
-       <button id="menuBtn" aria-controls="sidebar" aria-expanded="false">☰ Menu</button>
+        <button id="menuBtn" aria-controls="sidebar" aria-expanded="false">☰ Menu</button>
       </div>
 
       <div class="sidebar" id="sidebar">
@@ -281,51 +278,41 @@ app.get("/", requireLogin, async (req, res) => {
       </div>
 
 <script>
-  (function(){
-    const menuBtn = document.getElementById('menuBtn');
-    const sidebar = document.getElementById('sidebar');
-    const mainContent = document.getElementById('mainContent');
+(function(){
+  const menuBtn = document.getElementById('menuBtn');
+  const sidebar = document.getElementById('sidebar');
 
-    function openSidebar(){
-      sidebar.classList.add('active');
-      // mainContent.classList.add('shifted'); // uncomment if you want content to push
-      menuBtn.setAttribute('aria-expanded', 'true');
-    }
-    function closeSidebar(){
-      sidebar.classList.remove('active');
-      // mainContent.classList.remove('shifted');
-      menuBtn.setAttribute('aria-expanded', 'false');
-    }
+  function openSidebar(){
+    sidebar.classList.add('active');
+    menuBtn.setAttribute('aria-expanded', 'true');
+  }
+  function closeSidebar(){
+    sidebar.classList.remove('active');
+    menuBtn.setAttribute('aria-expanded', 'false');
+  }
 
-    menuBtn.addEventListener('click', function(e){
-      e.stopPropagation();
-      sidebar.classList.toggle('active');
-      const expanded = sidebar.classList.contains('active');
-      menuBtn.setAttribute('aria-expanded', expanded.toString());
-    });
-
-    // Close when clicking outside
-    document.addEventListener('click', function(e){
-      if (!sidebar.contains(e.target) && !menuBtn.contains(e.target) && sidebar.classList.contains('active')) {
-        closeSidebar();
-      }
-    });
-
-    // Close on Escape
-    document.addEventListener('keydown', function(e){
-      if (e.key === 'Escape' && sidebar.classList.contains('active')) closeSidebar();
-    });
-  })();
-
-
+  // Toggle sidebar
   menuBtn.addEventListener('click', function(e){
-  console.log("Menu clicked");   // ✅ should show in browser console
-  e.stopPropagation();
-  sidebar.classList.toggle('active');
-  const expanded = sidebar.classList.contains('active');
-  menuBtn.setAttribute('aria-expanded', expanded.toString());
-});
+    e.stopPropagation();
+    sidebar.classList.toggle('active');
+    const expanded = sidebar.classList.contains('active');
+    menuBtn.setAttribute('aria-expanded', expanded.toString());
+  });
 
+  // Close when clicking outside
+  document.addEventListener('click', function(e){
+    if (!sidebar.contains(e.target) && !menuBtn.contains(e.target) && sidebar.classList.contains('active')) {
+      closeSidebar();
+    }
+  });
+
+  // Close on Escape
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && sidebar.classList.contains('active')) {
+      closeSidebar();
+    }
+  });
+})();
 </script>
 
     </body>
