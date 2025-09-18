@@ -68,6 +68,12 @@ function requireLogin(req, res, next) {
   next();
 }
 
+function closeSidebar(){
+  sidebar.classList.remove('active');
+  menuBtn.setAttribute('aria-expanded', 'false');
+  menuBtn.classList.remove("hidden");
+}
+
 // Login page
 app.get("/login", (req, res) => {
   res.send(`
@@ -165,21 +171,22 @@ app.get("/", requireLogin, async (req, res) => {
         /* Floating Menu Button */
         #menuBtn {
           position: fixed;
-          top: 20px;
-          left: 20px;
-          width: 40px;
-          height: 40px;
-          border-radius: 50%;
+          top: 50%;              /* center vertically */
+          left: 0;               /* stick to left edge */
+          transform: translateY(-50%);
+          z-index: 1500;         /* above content */
+          background: rgba(0,0,0,0.7);
+          color: white;
           border: none;
-          background: #009688;
-          color: #fff;
-          font-size: 20px;
+          padding: 12px 8px;
+          border-radius: 0 6px 6px 0;
           cursor: pointer;
-          z-index: 1500;
-          box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-          transition: background 0.3s;
+          font-size: 20px;
+          transition: background 0.2s;
         }
-        #menuBtn:hover { background:#00796b; }
+           #menuBtn:hover {  background: rgba(0,0,0,0.9);}
+                              
+          #menuBtn.hidden { display: none; }          
 
         /* Sidebar */
         .sidebar {
@@ -240,11 +247,9 @@ app.get("/", requireLogin, async (req, res) => {
     </head>
     <body>
       <!-- Floating Arrow Button -->
-      <button id="menuBtn">←</button>
+       <button id="menuBtn" aria-controls="sidebar" aria-expanded="false">⮞</button>
 
       <div class="sidebar" id="sidebar">
-        <a href="#">Welcome</a>
-        <a href="#">Admin</a>
         <a href="/create">Create Account</a>
         <a href="/update">Update Account</a>
         <a href="/delete">Delete Account</a>
@@ -276,10 +281,18 @@ app.get("/", requireLogin, async (req, res) => {
     const menuBtn = document.getElementById('menuBtn');
     const sidebar = document.getElementById('sidebar');
 
-    menuBtn.addEventListener('click', function(e){
-      e.stopPropagation();
-      sidebar.classList.toggle('active');
-    });
+menuBtn.addEventListener('click', function(e){
+  e.stopPropagation();
+  sidebar.classList.toggle('active');
+  const expanded = sidebar.classList.contains('active');
+  menuBtn.setAttribute('aria-expanded', expanded.toString());
+
+  if (expanded) {
+    menuBtn.classList.add("hidden");
+  } else {
+    menuBtn.classList.remove("hidden");
+  }
+});
 
     // Close sidebar when clicking outside
     document.addEventListener('click', function(e){
