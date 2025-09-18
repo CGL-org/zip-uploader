@@ -74,17 +74,56 @@ app.get("/login", (req, res) => {
     <head>
       <title>Login</title>
       <style>
-        body { font-family: Arial; background: #e0f7f5; display: flex; align-items: center; justify-content: center; height: 100vh; }
-        .login-box { background: #fff; padding: 30px; border-radius: 10px; width: 300px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        h2 { text-align: center; margin-bottom: 20px; color: #00695c; }
-        input { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; }
-        button { width: 100%; padding: 10px; background: #009688; border: none; color: #fff; font-weight: bold; border-radius: 6px; cursor: pointer; }
-        button:hover { background: #00796b; }
+        body {
+          margin: 0;
+          height: 100vh;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          background: linear-gradient(135deg, #003c2f, #0a5f47);
+          font-family: Arial, sans-serif;
+        }
+        .login-box {
+          width: 320px;
+          padding: 30px;
+          border-radius: 12px;
+          background: rgba(255, 255, 255, 0.15);
+          backdrop-filter: blur(10px);
+          box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+          color: #fff;
+          text-align: center;
+        }
+        h2 { margin-bottom: 20px; }
+        input {
+          width: 100%;
+          padding: 12px;
+          margin: 10px 0;
+          border: none;
+          border-radius: 8px;
+          background: rgba(255, 255, 255, 0.2);
+          color: #fff;
+          font-size: 1em;
+          outline: none;
+          backdrop-filter: blur(5px);
+        }
+        input::placeholder { color: #ddd; }
+        button {
+          width: 100%;
+          padding: 12px;
+          border: none;
+          border-radius: 8px;
+          background: #00b894;
+          color: #fff;
+          font-size: 1em;
+          cursor: pointer;
+          transition: background 0.3s;
+        }
+        button:hover { background: #019874; }
       </style>
     </head>
     <body>
       <div class="login-box">
-        <h2>Login</h2>
+        <h2>Admin Login</h2>
         <form method="POST" action="/login">
           <input type="text" name="username" placeholder="Username" required />
           <input type="password" name="password" placeholder="Password" required />
@@ -116,21 +155,64 @@ app.get("/logout", (req, res) => {
   });
 });
 
-// ✅ Home (protected)
+// ✅ Home (protected) with sliding sidebar
 app.get("/", requireLogin, async (req, res) => {
   try {
     const files = await getFileList();
-    let html = `
+    res.send(`
       <html>
       <head>
         <title>Home Page</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <style>
-          body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f4; margin: 0; }
+          body { margin:0; font-family: Arial, sans-serif; background: #f4f4f4; }
+
+          /* Sidebar */
+          .sidebar {
+            position: fixed;
+            top: 0;
+            left: -220px;
+            width: 220px;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(10px);
+            color: #fff;
+            padding-top: 60px;
+            transition: left 0.3s ease;
+            z-index: 1000;
+          }
+          .sidebar.active { left: 0; }
+          .sidebar a {
+            display: block;
+            padding: 15px 20px;
+            color: #fff;
+            text-decoration: none;
+            font-size: 1em;
+            transition: background 0.3s;
+          }
+          .sidebar a:hover { background: rgba(255,255,255,0.1); }
+
+          /* Toggle Button */
+          .toggle-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: #009688;
+            border: none;
+            color: #fff;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 6px;
+            z-index: 1100;
+            transition: background 0.3s;
+          }
+          .toggle-btn:hover { background: #00796b; }
+
+          /* Content */
+          .content { margin-left: 20px; padding: 50px; transition: margin-left 0.3s; }
+          .content.shifted { margin-left: 240px; }
+
           h1 { color: #333; font-size: 1.5em; }
-          .menu { margin: 15px 0; }
-          .menu a { display: inline-block; margin: 5px; padding: 10px 15px; background: #009688; color: #fff; border-radius: 6px; text-decoration: none; }
-          .menu a:hover { background: #00796b; }
           .table-wrapper { overflow-x: auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
           table { width: 100%; border-collapse: collapse; min-width: 600px; }
           th, td { padding: 10px; border: 1px solid #ccc; text-align: left; font-size: 0.9em; }
@@ -138,39 +220,46 @@ app.get("/", requireLogin, async (req, res) => {
         </style>
       </head>
       <body>
-        <h1>✅ Welcome, ${req.session.user.username}</h1>
-        <div class="menu">
+        <button class="toggle-btn" onclick="toggleSidebar()">☰ Menu</button>
+
+        <div class="sidebar" id="sidebar">
+          <a href="#">Welcome</a>
+          <a href="#">Admin</a>
           <a href="/create">Create Account</a>
           <a href="/update">Update Account</a>
           <a href="/delete">Delete Account</a>
           <a href="/logout">Logout</a>
         </div>
-        <h2>📂 Files in Bucket: ${BUCKET}</h2>
-        <div class="table-wrapper">
-          <table>
-            <tr><th>Name</th><th>Type</th><th>Size</th><th>Last Modified</th><th>Link</th></tr>
-    `;
 
-    files.forEach((file) => {
-      html += `
-        <tr>
-          <td>${file.name}</td>
-          <td>${file.metadata?.mimetype || "N/A"}</td>
-          <td>${file.metadata?.size || "?"} bytes</td>
-          <td>${file.updated_at || "N/A"}</td>
-          <td><a href="${file.publicUrl}" target="_blank">Open</a></td>
-        </tr>
-      `;
-    });
-
-    html += `
-          </table>
+        <div class="content" id="mainContent">
+          <h1>✅ Welcome, ${req.session.user.username}</h1>
+          <h2>📂 Files in Bucket: ${BUCKET}</h2>
+          <div class="table-wrapper">
+            <table>
+              <tr><th>Name</th><th>Type</th><th>Size</th><th>Last Modified</th><th>Link</th></tr>
+              ${files.map(f => `
+                <tr>
+                  <td>${f.name}</td>
+                  <td>${f.metadata?.mimetype || "N/A"}</td>
+                  <td>${f.metadata?.size || "?"} bytes</td>
+                  <td>${f.updated_at || "N/A"}</td>
+                  <td><a href="${f.publicUrl}" target="_blank">Open</a></td>
+                </tr>`).join('')}
+            </table>
+          </div>
         </div>
+
+        <script>
+          function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const content = document.getElementById('mainContent');
+            sidebar.classList.toggle('active');
+            content.classList.toggle('shifted');
+          }
+        </script>
       </body>
       </html>
-    `;
-
-    res.send(html);
+    `);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
