@@ -26,7 +26,7 @@ const app = express();
 // Middleware
 app.use(
   helmet({
-    contentSecurityPolicy: false // allow inline scripts
+    contentSecurityPolicy: false,
   })
 );
 app.use(cors());
@@ -51,7 +51,9 @@ const upload = multer({
 
 // Get file list
 async function getFileList() {
-  const { data, error } = await supabase.storage.from(BUCKET).list("", { limit: 1000 });
+  const { data, error } = await supabase.storage
+    .from(BUCKET)
+    .list("", { limit: 1000 });
   if (error) throw new Error(error.message);
 
   return data.map((f) => {
@@ -159,46 +161,42 @@ app.get("/", requireLogin, async (req, res) => {
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <style>
         body { margin:0; font-family: Arial, sans-serif; background: #f0f2f5; }
-        
-        /* Top Nav */
-        .topnav {
-          display:flex;
-          justify-content:space-between;
-          align-items:center;
-          padding:15px 20px;
-          background:#009688;
-          color:#fff;
-          position:sticky;
-          top:0;
-          z-index:1000;
+
+        /* Floating Menu Button */
+        #menuBtn {
+          position: fixed;
+          top: 20px;
+          left: 20px;
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          border: none;
+          background: #009688;
+          color: #fff;
+          font-size: 20px;
+          cursor: pointer;
+          z-index: 1500;
+          box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+          transition: background 0.3s;
         }
-        .topnav button {
-          background:#00796b;
-          border:none;
-          color:#fff;
-          padding:10px 15px;
-          cursor:pointer;
-          border-radius:6px;
-          transition:0.3s;
-        }
-        .topnav button:hover { background:#004d40; }
+        #menuBtn:hover { background:#00796b; }
 
         /* Sidebar */
         .sidebar {
           position: fixed;
           top: 0;
-          left: -300px;                /* hidden off-screen */
-          width: 260px;
+          left: -260px;
+          width: 240px;
           height: 100vh;
           background: rgba(0,0,0,0.9);
-          backdrop-filter: blur(12px);
+          backdrop-filter: blur(10px);
           color: #fff;
-          padding-top: 64px;          /* leave space for the topnav */
-          transition: left 300ms ease;
-          z-index: 1200;
+          padding-top: 60px;
+          transition: left 0.3s ease;
+          z-index: 1400;
           box-shadow: 6px 0 20px rgba(0,0,0,0.2);
         }
-        .sidebar.active { left:0; }
+        .sidebar.active { left: 0; }
         .sidebar a {
           display:block;
           padding:14px 20px;
@@ -206,15 +204,12 @@ app.get("/", requireLogin, async (req, res) => {
           text-decoration:none;
           font-size:1rem;
         }
-        .sidebar a:hover { background: rgba(255,255,255,0.1); }
+        .sidebar a:hover { background: rgba(255,255,255,0.06); }
 
         /* Content */
         .content {
-          margin-left:20px;
-          padding:20px;
+          padding: 20px;
         }
-
-        h2 { color:#555; font-size:1.2em; margin-bottom:15px; }
 
         .table-wrapper {
           overflow-x:auto;
@@ -244,10 +239,8 @@ app.get("/", requireLogin, async (req, res) => {
       </style>
     </head>
     <body>
-      <div class="topnav">
-        <div>✅ Welcome, ${req.session.user.username}</div>
-        <button id="menuBtn" aria-controls="sidebar" aria-expanded="false">☰ Menu</button>
-      </div>
+      <!-- Floating Arrow Button -->
+      <button id="menuBtn">←</button>
 
       <div class="sidebar" id="sidebar">
         <a href="#">Welcome</a>
@@ -259,6 +252,7 @@ app.get("/", requireLogin, async (req, res) => {
       </div>
 
       <div class="content" id="mainContent">
+        <h2>✅ Welcome, ${req.session.user.username}</h2>
         <h2>📂 Files in Bucket: ${BUCKET}</h2>
         <div class="table-wrapper">
           <table>
@@ -278,79 +272,70 @@ app.get("/", requireLogin, async (req, res) => {
       </div>
 
 <script>
-(function(){
-  const menuBtn = document.getElementById('menuBtn');
-  const sidebar = document.getElementById('sidebar');
+  (function(){
+    const menuBtn = document.getElementById('menuBtn');
+    const sidebar = document.getElementById('sidebar');
 
-  function openSidebar(){
-    sidebar.classList.add('active');
-    menuBtn.setAttribute('aria-expanded', 'true');
-  }
-  function closeSidebar(){
-    sidebar.classList.remove('active');
-    menuBtn.setAttribute('aria-expanded', 'false');
-  }
+    menuBtn.addEventListener('click', function(e){
+      e.stopPropagation();
+      sidebar.classList.toggle('active');
+    });
 
-  // Toggle sidebar
-  menuBtn.addEventListener('click', function(e){
-    e.stopPropagation();
-    sidebar.classList.toggle('active');
-    const expanded = sidebar.classList.contains('active');
-    menuBtn.setAttribute('aria-expanded', expanded.toString());
-  });
+    // Close sidebar when clicking outside
+    document.addEventListener('click', function(e){
+      if (!sidebar.contains(e.target) && !menuBtn.contains(e.target)) {
+        sidebar.classList.remove('active');
+      }
+    });
 
-  // Close when clicking outside
-  document.addEventListener('click', function(e){
-    if (!sidebar.contains(e.target) && !menuBtn.contains(e.target) && sidebar.classList.contains('active')) {
-      closeSidebar();
-    }
-  });
-
-  // Close on Escape
-  document.addEventListener('keydown', function(e){
-    if (e.key === 'Escape' && sidebar.classList.contains('active')) {
-      closeSidebar();
-    }
-  });
-})();
+    // Close on Escape
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape') sidebar.classList.remove('active');
+    });
+  })();
 </script>
 
     </body>
     </html>
     `);
-  } catch(err) {
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
 // Upload ZIP only
-app.post("/upload-zip", requireLogin, upload.single("file"), async (req,res)=>{
-  if(!req.file) return res.status(400).json({error:"No file attached (field name = file)"});
+app.post("/upload-zip", requireLogin, upload.single("file"), async (req, res) => {
+  if (!req.file)
+    return res.status(400).json({ error: "No file attached (field name = file)" });
   try {
     const fileName = req.file.originalname;
     const fileBuffer = req.file.buffer;
-    const { error } = await supabase.storage.from(BUCKET).upload(fileName, fileBuffer, {
-      upsert:true,
-      contentType:"application/zip"
-    });
-    if(error) throw error;
-    res.json({ok:true, uploaded:fileName});
-  } catch(err){
+    const { error } = await supabase.storage
+      .from(BUCKET)
+      .upload(fileName, fileBuffer, {
+        upsert: true,
+        contentType: "application/zip",
+      });
+    if (error) throw error;
+    res.json({ ok: true, uploaded: fileName });
+  } catch (err) {
     console.error("❌ Upload error:", err);
-    res.status(500).json({error:err.message});
+    res.status(500).json({ error: err.message });
   }
 });
 
 // List files JSON
-app.get("/files", requireLogin, async (req,res)=>{
-  try{
+app.get("/files", requireLogin, async (req, res) => {
+  try {
     const files = await getFileList();
-    res.json({files});
-  } catch(err){
-    res.status(500).json({error:err.message});
+    res.json({ files });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
 // Start server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, ()=>console.log(`✅ Server listening on port ${PORT}`));
+app.listen(PORT, () =>
+  console.log(`✅ Server listening on port ${PORT}`)
+);
