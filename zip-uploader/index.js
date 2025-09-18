@@ -270,7 +270,7 @@ app.get("/", requireLogin, async (req, res) => {
       <button id="menuBtn" aria-controls="sidebar" aria-expanded="false">⮞</button>
 
       <div class="sidebar" id="sidebar">
-        <h2>Welcome, ${req.session.user.username}</h2>
+     
         <a href="/create">Create Account</a>
         <a href="/update">Update Account</a>
         <a href="/delete">Delete Account</a>
