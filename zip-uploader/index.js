@@ -68,11 +68,6 @@ function requireLogin(req, res, next) {
   next();
 }
 
-function closeSidebar(){
-  sidebar.classList.remove('active');
-  menuBtn.setAttribute('aria-expanded', 'false');
-  menuBtn.classList.remove("hidden");
-}
 
 // Login page
 app.get("/login", (req, res) => {
@@ -281,32 +276,39 @@ app.get("/", requireLogin, async (req, res) => {
     const menuBtn = document.getElementById('menuBtn');
     const sidebar = document.getElementById('sidebar');
 
-menuBtn.addEventListener('click', function(e){
-  e.stopPropagation();
-  sidebar.classList.toggle('active');
-  const expanded = sidebar.classList.contains('active');
-  menuBtn.setAttribute('aria-expanded', expanded.toString());
+    function closeSidebar(){
+      sidebar.classList.remove('active');
+      menuBtn.setAttribute('aria-expanded', 'false');
+      menuBtn.classList.remove("hidden");
+    }
 
-  if (expanded) {
-    menuBtn.classList.add("hidden");
-  } else {
-    menuBtn.classList.remove("hidden");
-  }
-});
+    menuBtn.addEventListener('click', function(e){
+      e.stopPropagation();
+      sidebar.classList.toggle('active');
+      const expanded = sidebar.classList.contains('active');
+      menuBtn.setAttribute('aria-expanded', expanded.toString());
+
+      if (expanded) {
+        menuBtn.classList.add("hidden");
+      } else {
+        menuBtn.classList.remove("hidden");
+      }
+    });
 
     // Close sidebar when clicking outside
     document.addEventListener('click', function(e){
       if (!sidebar.contains(e.target) && !menuBtn.contains(e.target)) {
-        sidebar.classList.remove('active');
+        closeSidebar();
       }
     });
 
     // Close on Escape
     document.addEventListener('keydown', function(e){
-      if (e.key === 'Escape') sidebar.classList.remove('active');
+      if (e.key === 'Escape') closeSidebar();
     });
   })();
 </script>
+
 
     </body>
     </html>
