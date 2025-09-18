@@ -182,7 +182,7 @@ app.get("/", requireLogin, async (req, res) => {
         /* Sidebar */
         .sidebar {
           position:fixed;
-          top:60px;
+          padding-top: 60px;
           left:-220px;
           width:220px;
           height:100%;
