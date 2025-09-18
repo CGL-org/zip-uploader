@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      display: flex;
+    }
+    /* Sidebar */
+    .sidebar {
+      position: fixed;
+      left: -220px;
+      top: 0;
+      width: 220px;
+      height: 100%;
+      background: #003c2f;
+      color: #fff;
+      transition: left 0.3s ease;
+      padding-top: 60px;
+    }
+    .sidebar.active {
+      left: 0;
+    }
+    .sidebar h2 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .sidebar a {
+      display: block;
+      padding: 12px 20px;
+      color: #fff;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .sidebar a:hover {
+      background: #019874;
+    }
+    /* Toggle button */
+    .toggle-btn {
+      position: fixed;
+      left: 10px;
+      top: 10px;
+      font-size: 24px;
+      cursor: pointer;
+      background: #00b894;
+      padding: 6px 12px;
+      border-radius: 6px;
+      color: #fff;
+      z-index: 1000;
+    }
+    /* Main content */
+    .content {
+      flex: 1;
+      margin-left: 0;
+      padding: 20px;
+      transition: margin-left 0.3s;
+      width: 100%;
+    }
+    .sidebar.active ~ .content {
+      margin-left: 220px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+    th {
+      background: #eee;
+    }
+  </style>
+</head>
+<body>
+  <div class="toggle-btn" onclick="toggleSidebar()">☰</div>
+
+  <div class="sidebar" id="sidebar">
+    <h2>Welcome, Admin</h2>
+    <a href="/create-account">Create Account</a>
+    <a href="/update-account">Update Account</a>
+    <a href="/delete-account">Delete Account</a>
+    <a href="/logout">Logout</a>
+  </div>
+
+  <div class="content">
+    <h1>📂 Files in Bucket</h1>
+    <div id="file-list">Loading files...</div>
+  </div>
+
+  <script>
+    function toggleSidebar() {
+      document.getElementById("sidebar").classList.toggle("active");
+    }
+
+    // Fetch files
+    fetch("/files")
+      .then(res => res.json())
+      .then(data => {
+        const list = document.getElementById("file-list");
+        let html = "<table><tr><th>Name</th><th>Type</th><th>Size</th><th>Last Modified</th><th>Link</th></tr>";
+        data.files.forEach(file => {
+          html += `<tr>
+            <td>${file.name}</td>
+            <td>${file.metadata?.mimetype || "N/A"}</td>
+            <td>${file.metadata?.size || "?"} bytes</td>
+            <td>${file.updated_at || "N/A"}</td>
+            <td><a href="${file.publicUrl}" target="_blank">Open</a></td>
+          </tr>`;
+        });
+        html += "</table>";
+        list.innerHTML = html;
+      });
+  </script>
+</body>
+</html>
