@@ -6,6 +6,7 @@
     "start": "node index.js"
   },
   "dependencies": {
+    "express-session": "^1.17.3"
     "@supabase/supabase-js": "^2.0.0",
     "adm-zip": "^0.5.9",
     "dotenv": "^16.0.0",
