@@ -7,58 +7,63 @@
   <style>
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #2ecc71, #27ae60);
+      height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
+      background: linear-gradient(135deg, #003c2f, #0a5f47);
+      font-family: Arial, sans-serif;
     }
     .login-box {
+      width: 320px;
+      padding: 30px;
+      border-radius: 12px;
       background: rgba(255, 255, 255, 0.15);
-      padding: 20px;
-      border-radius: 15px;
-      max-width: 350px;
-      width: 100%;
-      text-align: center;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
       backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      color: #fff;
+      text-align: center;
     }
-    .login-box h2 { color: #fff; margin-bottom: 20px; }
-    .input-field { position: relative; margin: 15px 0; }
-    .input-field input {
-      width: 100%; padding: 12px 40px;
-      border-radius: 30px; border: none;
+    .login-box h2 {
+      margin-bottom: 20px;
+    }
+    .login-box input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 8px;
       background: rgba(255, 255, 255, 0.2);
-      color: #fff; font-size: 1em;
+      color: #fff;
+      font-size: 1em;
+      outline: none;
     }
-    .input-field input::placeholder { color: #eee; }
-    .input-field .icon {
-      position: absolute; top: 50%; left: 15px;
-      transform: translateY(-50%); color: #fff;
+    .login-box input::placeholder {
+      color: #ddd;
     }
-    .login-btn {
-      width: 100%; padding: 12px; margin-top: 10px;
-      border-radius: 30px; border: none;
-      background: #fff; color: #27ae60;
-      font-weight: bold; font-size: 1em;
+    .login-box button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      background: #00b894;
+      color: #fff;
+      font-size: 1em;
       cursor: pointer;
+      transition: background 0.3s;
+    }
+    .login-box button:hover {
+      background: #019874;
     }
   </style>
 </head>
 <body>
   <div class="login-box">
-    <h2>Login</h2>
-    <form action="/login" method="POST">
-      <div class="input-field">
-        <span class="icon">👤</span>
-        <input type="text" name="username" placeholder="Username" required />
-      </div>
-      <div class="input-field">
-        <span class="icon">🔒</span>
-        <input type="password" name="password" placeholder="Password" required />
-      </div>
-      <button type="submit" class="login-btn">LOGIN</button>
+    <h2>Admin Login</h2>
+    <form method="POST" action="/login">
+      <input type="text" name="username" placeholder="Username" required />
+      <input type="password" name="password" placeholder="Password" required />
+      <button type="submit">Login</button>
     </form>
   </div>
 </body>
