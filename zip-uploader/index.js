@@ -181,29 +181,28 @@ app.get("/", requireLogin, async (req, res) => {
 
         /* Sidebar */
         .sidebar {
-          position:fixed;
-          padding-top: 60px;
-          left:-220px;
-          width:220px;
-          height:100%;
-          background: rgba(0,0,0,0.7);
-          backdrop-filter: blur(15px);
-          color:#fff;
-          padding-top:20px;
-          transition:left 0.3s;
-          z-index:900;
+          position: fixed;
+          top: 0;
+          left: -260px;                /* hidden off-screen */
+          width: 260px;
+          height: 100vh;
+          background: rgba(0,0,0,0.85);
+          backdrop-filter: blur(12px);
+          color: #fff;
+          padding-top: 64px;          /* leave space for the topnav */
+          transition: left 260ms cubic-bezier(0.2,0.8,0.2,1);
+          z-index: 1200;              /* ABOVE the topnav so it is visible */
+          box-shadow: 6px 0 20px rgba(0,0,0,0.2);
         }
         .sidebar.active { left:0; }
         .sidebar a {
           display:block;
-          padding:15px 20px;
+          padding:14px 20px;
           color:#fff;
           text-decoration:none;
-          font-size:1em;
-          transition:0.3s;
+          font-size:1rem;
         }
-        .sidebar a:hover { background: rgba(255,255,255,0.1); }
-
+        .sidebar a:hover { background: rgba(255,255,255,0.06); }
         /* Content */
         .content {
           margin-left:20px;
@@ -246,7 +245,7 @@ app.get("/", requireLogin, async (req, res) => {
     <body>
       <div class="topnav">
         <div>✅ Welcome, ${req.session.user.username}</div>
-        <button onclick="toggleSidebar()">☰ Menu</button>
+       <button id="menuBtn" aria-controls="sidebar" aria-expanded="false">☰ Menu</button>
       </div>
 
       <div class="sidebar" id="sidebar">
@@ -277,14 +276,44 @@ app.get("/", requireLogin, async (req, res) => {
         </div>
       </div>
 
-      <script>
-        function toggleSidebar(){
-          const sidebar = document.getElementById('sidebar');
-          const content = document.getElementById('mainContent');
-          sidebar.classList.toggle('active');
-          content.classList.toggle('shifted');
-        }
-      </script>
+<script>
+  (function(){
+    const menuBtn = document.getElementById('menuBtn');
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+
+    function openSidebar(){
+      sidebar.classList.add('active');
+      // mainContent.classList.add('shifted'); // uncomment if you want content to push
+      menuBtn.setAttribute('aria-expanded', 'true');
+    }
+    function closeSidebar(){
+      sidebar.classList.remove('active');
+      // mainContent.classList.remove('shifted');
+      menuBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    menuBtn.addEventListener('click', function(e){
+      e.stopPropagation();
+      sidebar.classList.toggle('active');
+      const expanded = sidebar.classList.contains('active');
+      menuBtn.setAttribute('aria-expanded', expanded.toString());
+    });
+
+    // Close when clicking outside
+    document.addEventListener('click', function(e){
+      if (!sidebar.contains(e.target) && !menuBtn.contains(e.target) && sidebar.classList.contains('active')) {
+        closeSidebar();
+      }
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape' && sidebar.classList.contains('active')) closeSidebar();
+    });
+  })();
+</script>
+
     </body>
     </html>
     `);
