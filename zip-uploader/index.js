@@ -68,7 +68,6 @@ function requireLogin(req, res, next) {
   next();
 }
 
-
 // Login page
 app.get("/login", (req, res) => {
   res.send(`
@@ -158,18 +157,18 @@ app.get("/", requireLogin, async (req, res) => {
     res.send(`
     <html>
     <head>
-      <title>Home Page</title>
+      <title>Dashboard</title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <style>
-        body { margin:0; font-family: Arial, sans-serif; background: #f0f2f5; }
+        body { margin:0; font-family: "Segoe UI", Tahoma, sans-serif; background: #f4f6f9; color:#333; }
 
         /* Floating Menu Button */
         #menuBtn {
           position: fixed;
-          top: 50%;              /* center vertically */
-          left: 0;               /* stick to left edge */
+          top: 50%;
+          left: 0;
           transform: translateY(-50%);
-          z-index: 1500;         /* above content */
+          z-index: 1500;
           background: rgba(0,0,0,0.7);
           color: white;
           border: none;
@@ -179,9 +178,8 @@ app.get("/", requireLogin, async (req, res) => {
           font-size: 20px;
           transition: background 0.2s;
         }
-           #menuBtn:hover {  background: rgba(0,0,0,0.9);}
-                              
-          #menuBtn.hidden { display: none; }          
+        #menuBtn:hover { background: rgba(0,0,0,0.9);}
+        #menuBtn.hidden { display: none; }
 
         /* Sidebar */
         .sidebar {
@@ -190,8 +188,7 @@ app.get("/", requireLogin, async (req, res) => {
           left: -260px;
           width: 240px;
           height: 100vh;
-          background: rgba(0,0,0,0.9);
-          backdrop-filter: blur(10px);
+          background: #222;
           color: #fff;
           padding-top: 60px;
           transition: left 0.3s ease;
@@ -206,43 +203,71 @@ app.get("/", requireLogin, async (req, res) => {
           text-decoration:none;
           font-size:1rem;
         }
-        .sidebar a:hover { background: rgba(255,255,255,0.06); }
+        .sidebar a:hover { background: rgba(255,255,255,0.08); }
+
+        /* Header */
+        .header {
+          background: #009688;
+          color: #fff;
+          padding: 15px 25px;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+        .header h1 {
+          margin:0;
+          font-size: 1.4rem;
+          font-weight: 500;
+        }
 
         /* Content */
         .content {
-          padding: 20px;
+          padding: 30px;
         }
-
-        .table-wrapper {
-          overflow-x:auto;
+        .card {
           background:#fff;
           border-radius:10px;
-          box-shadow:0 4px 10px rgba(0,0,0,0.1);
+          box-shadow:0 4px 10px rgba(0,0,0,0.08);
+          padding:20px;
+          margin-bottom:20px;
+        }
+        .card h2 {
+          margin-top:0;
+          font-size:1.2rem;
+          color:#009688;
+        }
+
+        /* Table */
+        .table-wrapper {
+          overflow-x:auto;
+          border-radius:10px;
         }
         table {
           width:100%;
           border-collapse:collapse;
-          min-width:700px;
+          font-size:0.95em;
+        }
+        thead {
+          background:#009688;
+          color:#fff;
         }
         th, td {
           padding:12px 15px;
           border-bottom:1px solid #ddd;
           text-align:left;
-          font-size:0.95em;
         }
-        th { background:#f3f3f3; font-weight:600; }
-        tr:hover { background:#f1f7f7; }
-        a { color:#009688; text-decoration:none; }
+        tbody tr:nth-child(even) { background:#f9f9f9; }
+        tbody tr:hover { background:#f1f7f7; }
+        a { color:#009688; text-decoration:none; font-weight:500; }
         a:hover { text-decoration:underline; }
 
         @media(max-width:768px){
-          table { min-width:100%; }
+          .content { padding:15px; }
+          table { font-size:0.85em; }
         }
       </style>
     </head>
     <body>
       <!-- Floating Arrow Button -->
-       <button id="menuBtn" aria-controls="sidebar" aria-expanded="false">⮞</button>
+      <button id="menuBtn" aria-controls="sidebar" aria-expanded="false">⮞</button>
 
       <div class="sidebar" id="sidebar">
         <a href="/create">Create Account</a>
@@ -251,65 +276,75 @@ app.get("/", requireLogin, async (req, res) => {
         <a href="/logout">Logout</a>
       </div>
 
+      <div class="header">
+        <h1>Admin Dashboard</h1>
+      </div>
+
       <div class="content" id="mainContent">
-        <h2>✅ Welcome, ${req.session.user.username}</h2>
-        <h2>📂 Files in Bucket: ${BUCKET}</h2>
-        <div class="table-wrapper">
-          <table>
-            <tr>
-              <th>Name</th><th>Type</th><th>Size</th><th>Last Modified</th><th>Link</th>
-            </tr>
-            ${files.map(f => `
-              <tr>
-                <td>${f.name}</td>
-                <td>${f.metadata?.mimetype || "N/A"}</td>
-                <td>${f.metadata?.size || "?"} bytes</td>
-                <td>${f.updated_at || "N/A"}</td>
-                <td>${f.publicUrl ? `<a href="${f.publicUrl}" target="_blank">Open</a>` : "-"}</td>
-              </tr>`).join('')}
-          </table>
+        <div class="card">
+          <h2>Welcome, ${req.session.user.username}</h2>
+          <p>📂 Bucket: <strong>${BUCKET}</strong></p>
+        </div>
+
+        <div class="card">
+          <h2>Stored Files</h2>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th><th>Type</th><th>Size</th><th>Last Modified</th><th>Link</th>
+                </tr>
+              </thead>
+              <tbody>
+              ${files.map(f => `
+                <tr>
+                  <td>${f.name}</td>
+                  <td>${f.metadata?.mimetype || "N/A"}</td>
+                  <td>${f.metadata?.size || "?"} bytes</td>
+                  <td>${f.updated_at || "N/A"}</td>
+                  <td>${f.publicUrl ? `<a href="${f.publicUrl}" target="_blank">Open</a>` : "-"}</td>
+                </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-<script>
-  (function(){
-    const menuBtn = document.getElementById('menuBtn');
-    const sidebar = document.getElementById('sidebar');
+      <script>
+        (function(){
+          const menuBtn = document.getElementById('menuBtn');
+          const sidebar = document.getElementById('sidebar');
 
-    function closeSidebar(){
-      sidebar.classList.remove('active');
-      menuBtn.setAttribute('aria-expanded', 'false');
-      menuBtn.classList.remove("hidden");
-    }
+          function closeSidebar(){
+            sidebar.classList.remove('active');
+            menuBtn.setAttribute('aria-expanded', 'false');
+            menuBtn.classList.remove("hidden");
+          }
 
-    menuBtn.addEventListener('click', function(e){
-      e.stopPropagation();
-      sidebar.classList.toggle('active');
-      const expanded = sidebar.classList.contains('active');
-      menuBtn.setAttribute('aria-expanded', expanded.toString());
+          menuBtn.addEventListener('click', function(e){
+            e.stopPropagation();
+            sidebar.classList.toggle('active');
+            const expanded = sidebar.classList.contains('active');
+            menuBtn.setAttribute('aria-expanded', expanded.toString());
 
-      if (expanded) {
-        menuBtn.classList.add("hidden");
-      } else {
-        menuBtn.classList.remove("hidden");
-      }
-    });
+            if (expanded) {
+              menuBtn.classList.add("hidden");
+            } else {
+              menuBtn.classList.remove("hidden");
+            }
+          });
 
-    // Close sidebar when clicking outside
-    document.addEventListener('click', function(e){
-      if (!sidebar.contains(e.target) && !menuBtn.contains(e.target)) {
-        closeSidebar();
-      }
-    });
+          document.addEventListener('click', function(e){
+            if (!sidebar.contains(e.target) && !menuBtn.contains(e.target)) {
+              closeSidebar();
+            }
+          });
 
-    // Close on Escape
-    document.addEventListener('keydown', function(e){
-      if (e.key === 'Escape') closeSidebar();
-    });
-  })();
-</script>
-
-
+          document.addEventListener('keydown', function(e){
+            if (e.key === 'Escape') closeSidebar();
+          });
+        })();
+      </script>
     </body>
     </html>
     `);
@@ -352,5 +387,5 @@ app.get("/files", requireLogin, async (req, res) => {
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () =>
-  console.log(`✅ Server listening on port ${PORT}`)
+  console.log(\`✅ Server listening on port \${PORT}\`)
 );
