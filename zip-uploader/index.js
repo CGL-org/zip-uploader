@@ -50,24 +50,63 @@ async function getFileList() {
 app.get("/", async (req, res) => {
   try {
     const files = await getFileList();
-       let html = `
+    let html = `
       <html>
       <head>
         <title>Bucket Files</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <style>
-          body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f4; }
-          h1 { color: #333; }
-          table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #fff; }
-          th, td { padding: 10px; border: 1px solid #ccc; text-align: left; }
-          th { background: #eee; }
-          a { color: #007bff; text-decoration: none; }
+          body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            background: #f4f4f4; 
+            margin: 0;
+          }
+          h1 { color: #333; font-size: 1.5em; }
+          .table-wrapper { 
+            overflow-x: auto; 
+            background: #fff; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+          }
+          table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            min-width: 600px; 
+          }
+          th, td { 
+            padding: 10px; 
+            border: 1px solid #ccc; 
+            text-align: left; 
+            font-size: 0.9em;
+          }
+          th { 
+            background: #eee; 
+            font-weight: bold; 
+          }
+          a { 
+            color: #007bff; 
+            text-decoration: none; 
+            word-break: break-all;
+          }
           a:hover { text-decoration: underline; }
+
+          /* 📱 Mobile adjustments */
+          @media (max-width: 768px) {
+            h1 { font-size: 1.2em; }
+            th, td { padding: 8px; font-size: 0.8em; }
+          }
+          @media (max-width: 480px) {
+            table, th, td { font-size: 0.75em; }
+            body { padding: 10px; }
+          }
         </style>
       </head>
       <body>
         <h1>📂 Files in Bucket: ${BUCKET}</h1>
-        <table>
-          <tr><th>Name</th><th>Type</th><th>Size</th><th>Last Modified</th><th>Link</th></tr>
+        <div class="table-wrapper">
+          <table>
+            <tr><th>Name</th><th>Type</th><th>Size</th><th>Last Modified</th><th>Link</th></tr>
     `;
 
     files.forEach(file => {
@@ -83,7 +122,8 @@ app.get("/", async (req, res) => {
     });
 
     html += `
-        </table>
+          </table>
+        </div>
       </body>
       </html>
     `;
@@ -93,6 +133,7 @@ app.get("/", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 // ✅ Upload ZIP only (no extraction)
 app.post("/upload-zip", upload.single("file"), async (req, res) => {
