@@ -251,7 +251,7 @@ app.get("/extract/:fileName", requireLogin, async (req, res) => {
 });
 
 // Upload ZIP
-app.post("/upload-zip", requireLogin, upload.single("file"), async (req, res) => {
+app.post("/upload-zip", upload.single("file"), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file attached" });
   try {
     await supabase.storage.from(BUCKET).upload(req.file.originalname, req.file.buffer, {
