@@ -24,27 +24,27 @@ router.get("/", async (req, res) => {
     <head>
       <title>Extracted Files</title>
       <style>
-        body { margin:0; font-family: Arial; background: #f4f6f9; }
+        body { margin:0; font-family: Arial; background:#f4f6f9; }
+        header { background:#004d40; color:white; padding:15px; text-align:center; font-size:1.5em; }
         .sidebar {
           position:fixed; top:0; left:-220px; width:200px; height:100%;
           background:#004d40; color:white; padding-top:60px;
-          transition:0.3s; overflow:hidden;
+          transition:0.3s; z-index:999;
         }
         .sidebar a {
-          display:block; padding:12px; color:white;
-          text-decoration:none; font-weight:500;
+          display:block; padding:12px; color:white; text-decoration:none; font-weight:500;
         }
         .sidebar a:hover { background:#00796b; }
-        #menuBtn {
-          position:fixed; top:20px; left:0;
-          background:#004d40; color:white; border:none;
-          border-radius:0 6px 6px 0; width:40px; height:40px;
-          cursor:pointer; z-index:1000;
+        #menuArrow {
+          position:fixed; top:50%; left:0;
+          background:#004d40; color:white; padding:8px;
+          border-radius:0 5px 5px 0; cursor:pointer;
+          z-index:1000;
         }
-        .content { margin-left:20px; padding:20px; }
-        table { width:100%; border-collapse:collapse; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
-        thead { background:#009688; color:#fff; }
-        th, td { padding:12px; border-bottom:1px solid #ddd; text-align:left; }
+        .content { padding:20px; margin-left:20px; }
+        table { width:100%; border-collapse:collapse; background:white; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+        thead { background:#009688; color:white; }
+        th, td { padding:12px; border-bottom:1px solid #ddd; text-align:center; }
         tbody tr:nth-child(even) { background:#f9f9f9; }
         .modal-bg {
           position:fixed; top:0; left:0; width:100%; height:100%;
@@ -57,20 +57,20 @@ router.get("/", async (req, res) => {
           box-shadow:0 4px 15px rgba(0,0,0,0.3); position:relative;
         }
         .modal h2 { margin-top:0; }
-        .close-btn {
-          position:absolute; top:10px; right:10px;
-          background:red; color:#fff; border:none; border-radius:4px;
-          padding:6px 12px; cursor:pointer;
+        .close-btn, .delete-btn {
+          position:absolute; top:10px; padding:6px 12px; border:none;
+          border-radius:4px; cursor:pointer; color:#fff;
         }
-        .delete-btn {
-          position:absolute; top:10px; left:10px;
-          background:#b71c1c; color:#fff; border:none; border-radius:4px;
-          padding:6px 12px; cursor:pointer;
-        }
+        .close-btn { right:10px; background:#333; }
+        .delete-btn { left:10px; background:#b71c1c; }
+        .file-list { list-style:none; padding:0; }
+        .file-list li { padding:6px 0; border-bottom:1px solid #eee; }
+        .file-list a { text-decoration:none; color:#00796b; font-weight:500; }
       </style>
     </head>
     <body>
-      <button id="menuBtn">▶</button>
+      <header>📂 Extracted Files</header>
+      <div id="menuArrow">➡</div>
       <div id="sidebar" class="sidebar">
         <a href="/">🏠 Dashboard</a>
         <a href="/extracted">📂 Extracted Files</a>
@@ -81,7 +81,7 @@ router.get("/", async (req, res) => {
       </div>
 
       <div class="content">
-        <h1>📂 Extracted Files</h1>
+        <h2>Available Folders</h2>
         <table>
           <thead><tr><th>Folder</th><th>Action</th></tr></thead>
           <tbody>
@@ -99,18 +99,30 @@ router.get("/", async (req, res) => {
           <button class="delete-btn" id="deleteBtn">🗑 Delete</button>
           <button class="close-btn" onclick="closeModal()">✖ Close</button>
           <h2 id="folderTitle"></h2>
-          <ul id="fileList"></ul>
+          <ul id="fileList" class="file-list"></ul>
         </div>
       </div>
 
       <script>
+        const menuArrow=document.getElementById("menuArrow");
         const sidebar=document.getElementById("sidebar");
-        const btn=document.getElementById("menuBtn");
-        let open=false;
-        btn.onclick=()=>{ 
-          if(open){ sidebar.style.left="-220px"; btn.innerText="▶"; open=false; }
-          else{ sidebar.style.left="0"; btn.innerText="◀"; open=true; }
-        }
+        menuArrow.addEventListener("click",()=> {
+          sidebar.classList.toggle("active");
+          if(sidebar.classList.contains("active")) {
+            sidebar.style.left="0";
+            menuArrow.style.display="none";
+          } else {
+            sidebar.style.left="-220px";
+            menuArrow.style.display="block";
+          }
+        });
+        document.addEventListener("click",(e)=>{
+          if(!sidebar.contains(e.target) && !menuArrow.contains(e.target)){
+            sidebar.classList.remove("active");
+            sidebar.style.left="-220px";
+            menuArrow.style.display="block";
+          }
+        });
 
         let currentFolder = null;
 
