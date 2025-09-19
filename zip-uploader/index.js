@@ -74,13 +74,64 @@ function requireLogin(req, res, next) {
 app.get("/login", (req, res) => {
   res.send(`
   <html>
-  <head><title>Login</title></head>
+  <head>
+    <title>Login</title>
+    <style>
+      body {
+        margin:0;
+        height:100vh;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        font-family: Arial, sans-serif;
+        background: linear-gradient(135deg,#003c2f,#0a5f47);
+      }
+      .login-box {
+        width: 350px;
+        padding: 30px;
+        border-radius: 15px;
+        background: rgba(255,255,255,0.15);
+        backdrop-filter: blur(15px);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        color: #fff;
+        text-align:center;
+      }
+      h2 { margin-bottom: 20px; }
+      input {
+        width:100%;
+        padding:12px;
+        margin:10px 0;
+        border:none;
+        border-radius:8px;
+        background: rgba(255,255,255,0.2);
+        color:#fff;
+        font-size:1em;
+        outline:none;
+      }
+      input::placeholder { color:#ddd; }
+      button {
+        width:100%;
+        padding:12px;
+        border:none;
+        border-radius:8px;
+        background:#00b894;
+        color:#fff;
+        font-size:1em;
+        cursor:pointer;
+        transition:0.3s;
+      }
+      button:hover { background:#019874; }
+    </style>
+  </head>
   <body>
-    <form method="POST" action="/login">
-      <input type="text" name="username" placeholder="Username" required />
-      <input type="password" name="password" placeholder="Password" required />
-      <button type="submit">Login</button>
-    </form>
+    <div class="login-box">
+      <h2>Admin Login</h2>
+      <form method="POST" action="/login">
+        <input type="text" name="username" placeholder="Username" required />
+        <input type="password" name="password" placeholder="Password" required />
+        <button type="submit">Login</button>
+      </form>
+    </div>
   </body>
   </html>
   `);
@@ -110,42 +161,178 @@ app.get("/", requireLogin, async (req, res) => {
     <head>
       <title>Dashboard</title>
       <style>
-        body { margin:0; font-family: Arial; background: #f4f6f9; }
-        .table-wrapper { overflow-x:auto; }
-        table { width:100%; border-collapse:collapse; }
+        body { margin:0; font-family: "Segoe UI", Tahoma, sans-serif; background: #f4f6f9; color:#333; }
+
+        /* Floating Menu Button */
+        #menuBtn {
+          position: fixed;
+          top: 50%;
+          left: 0;
+          transform: translateY(-50%);
+          z-index: 1500;
+          background: rgba(0,0,0,0.7);
+          color: white;
+          border: none;
+          padding: 12px 8px;
+          border-radius: 0 6px 6px 0;
+          cursor: pointer;
+          font-size: 20px;
+          transition: background 0.2s;
+        }
+        #menuBtn:hover { background: rgba(0,0,0,0.9);}
+        #menuBtn.hidden { display: none; }
+
+        /* Sidebar */
+        .sidebar {
+          position: fixed;
+          top: 0;
+          left: -260px;
+          width: 240px;
+          height: 100vh;
+          background: #222;
+          color: #fff;
+          padding-top: 60px;
+          transition: left 0.3s ease;
+          z-index: 1400;
+          box-shadow: 6px 0 20px rgba(0,0,0,0.2);
+        }
+        .sidebar.active { left: 0; }
+        .sidebar a {
+          display:block;
+          padding:14px 20px;
+          color:#fff;
+          text-decoration:none;
+          font-size:1rem;
+        }
+        .sidebar a:hover { background: rgba(255,255,255,0.08); }
+
+        /* Header */
+        .header {
+          background: #009688;
+          color: #fff;
+          padding: 15px 25px;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+        .header h1 {
+          margin:0;
+          font-size: 1.4rem;
+          font-weight: 500;
+        }
+
+        /* Content */
+        .content { padding: 30px; }
+        .card {
+          background:#fff;
+          border-radius:10px;
+          box-shadow:0 4px 10px rgba(0,0,0,0.08);
+          padding:20px;
+          margin-bottom:20px;
+        }
+        .card h2 {
+          margin-top:0;
+          font-size:1.2rem;
+          color:#009688;
+        }
+
+        /* Table */
+        .table-wrapper { overflow-x:auto; border-radius:10px; }
+        table { width:100%; border-collapse:collapse; font-size:0.95em; }
         thead { background:#009688; color:#fff; }
-        th, td { padding:12px; border-bottom:1px solid #ddd; }
+        th, td { padding:12px 15px; border-bottom:1px solid #ddd; text-align:left; }
         tbody tr:nth-child(even) { background:#f9f9f9; }
-        a { color:#009688; text-decoration:none; }
+        tbody tr:hover { background:#f1f7f7; }
+        a { color:#009688; text-decoration:none; font-weight:500; }
         a:hover { text-decoration:underline; }
+
+        @media(max-width:768px){
+          .content { padding:15px; }
+          table { font-size:0.85em; }
+        }
       </style>
     </head>
     <body>
-      <h1>Admin Dashboard</h1>
-      <p>Welcome, ${req.session.user.username}</p>
-      <p>📂 Bucket: <strong>${BUCKET}</strong></p>
+      <!-- Floating Arrow Button -->
+      <button id="menuBtn" aria-controls="sidebar" aria-expanded="false">⮞</button>
 
-      <h2>Stored Files</h2>
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr><th>Name</th><th>Type</th><th>Size</th><th>Last Modified</th><th>Action</th></tr>
-          </thead>
-          <tbody>
-          ${files.map(f => `
-            <tr>
-              <td>${f.name}</td>
-              <td>${f.metadata?.mimetype || "N/A"}</td>
-              <td>${f.metadata?.size || "?"} bytes</td>
-              <td>${f.updated_at || "N/A"}</td>
-              <td>${f.name.endsWith(".zip") 
-                ? `<a href="/extract/${encodeURIComponent(f.name)}">Extract</a>` 
-                : "-"}</td>
-            </tr>`).join('')}
-          </tbody>
-        </table>
+      <div class="sidebar" id="sidebar">
+        <a href="/create">Create Account</a>
+        <a href="/update">Update Account</a>
+        <a href="/delete">Delete Account</a>
+        <a href="/extracted">View Extracted Files</a>
+        <a href="/logout">Logout</a>
       </div>
-      <p><a href="/extracted">📂 View Extracted Files</a></p>
+
+      <div class="header">
+        <h1>Admin Dashboard</h1>
+      </div>
+
+      <div class="content" id="mainContent">
+        <div class="card">
+          <h2>Welcome, ${req.session.user.username}</h2>
+          <p>📂 Bucket: <strong>${BUCKET}</strong></p>
+        </div>
+
+        <div class="card">
+          <h2>Stored Files</h2>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th><th>Type</th><th>Size</th><th>Last Modified</th><th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+              ${files.map(f => `
+                <tr>
+                  <td>${f.name}</td>
+                  <td>${f.metadata?.mimetype || "N/A"}</td>
+                  <td>${f.metadata?.size || "?"} bytes</td>
+                  <td>${f.updated_at || "N/A"}</td>
+                  <td>${f.name.endsWith(".zip") 
+                    ? `<a href="/extract/${encodeURIComponent(f.name)}">Extract</a>` 
+                    : "-"}</td>
+                </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <script>
+        (function(){
+          const menuBtn = document.getElementById('menuBtn');
+          const sidebar = document.getElementById('sidebar');
+
+          function closeSidebar(){
+            sidebar.classList.remove('active');
+            menuBtn.setAttribute('aria-expanded', 'false');
+            menuBtn.classList.remove("hidden");
+          }
+
+          menuBtn.addEventListener('click', function(e){
+            e.stopPropagation();
+            sidebar.classList.toggle('active');
+            const expanded = sidebar.classList.contains('active');
+            menuBtn.setAttribute('aria-expanded', expanded.toString());
+
+            if (expanded) {
+              menuBtn.classList.add("hidden");
+            } else {
+              menuBtn.classList.remove("hidden");
+            }
+          });
+
+          document.addEventListener('click', function(e){
+            if (!sidebar.contains(e.target) && !menuBtn.contains(e.target)) {
+              closeSidebar();
+            }
+          });
+
+          document.addEventListener('keydown', function(e){
+            if (e.key === 'Escape') closeSidebar();
+          });
+        })();
+      </script>
     </body>
     </html>
     `);
@@ -159,14 +346,12 @@ app.get("/extract/:fileName", requireLogin, async (req, res) => {
   const fileName = req.params.fileName;
 
   try {
-    // Download the zip from Supabase
     const { data, error } = await supabase.storage.from(BUCKET).download(fileName);
     if (error) throw error;
 
     const buffer = Buffer.from(await data.arrayBuffer());
     const zip = new AdmZip(buffer);
 
-    // Extract each file into Extracted_Files/{zipName}/
     const zipBase = fileName.replace(/\.zip$/i, "");
     const entries = zip.getEntries();
 
@@ -191,7 +376,6 @@ app.get("/extract/:fileName", requireLogin, async (req, res) => {
 // Extracted files page
 app.get("/extracted", requireLogin, async (req, res) => {
   try {
-    // list top-level folders in Extracted_Files
     const { data, error } = await supabase.storage.from(EXTRACTED_BUCKET).list("");
     if (error) throw error;
 
