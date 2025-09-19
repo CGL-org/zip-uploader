@@ -63,7 +63,7 @@ router.get("/", async (req, res) => {
   /* Modal box */
   .modal {
     background:#fff; padding:20px; border-radius:12px;
-    max-width:700px; width:80%;
+    max-width:900px; width:90%; max-height:85vh; overflow-y:auto;
     box-shadow:0 6px 20px rgba(0,0,0,0.25);
   }
   
@@ -78,6 +78,24 @@ router.get("/", async (req, res) => {
     border-radius:6px; cursor:pointer;
   }
   
+  /* Section titles */
+  .section-title {
+    font-size:1.1em; font-weight:bold; color:#004d40;
+    margin:15px 0 10px;
+  }
+
+  /* Image grid */
+  .image-grid {
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr));
+    gap:10px;
+  }
+  .image-grid img {
+    width:100%; height:100px; object-fit:cover;
+    border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.2);
+    cursor:pointer; transition:transform 0.2s;
+  }
+  .image-grid img:hover { transform:scale(1.05); }
+
   /* File list */
   .file-list { list-style:none; padding:0; margin:0; }
   .file-list li {
@@ -131,7 +149,8 @@ router.get("/", async (req, res) => {
       <h2 id="folderTitle"></h2>
       <button onclick="closeModal()">✖ Close</button>
     </div>
-    <ul id="fileList" class="file-list"></ul>
+    <div id="imageSection"></div>
+    <div id="fileSection"></div>
     <div class="modal-footer">
       <button id="deleteBtn">🗑 Delete Folder</button>
     </div>
@@ -167,8 +186,33 @@ router.get("/", async (req, res) => {
           const res = await fetch('/extracted/'+folder+'/list');
           const data = await res.json();
           document.getElementById('folderTitle').innerText = folder;
-          document.getElementById('fileList').innerHTML =
-            data.files.map(f => '<li><a href="'+f.publicUrl+'" target="_blank">'+f.name+'</a></li>').join('');
+
+          const imageExts = ['.png','.jpg','.jpeg','.gif','.webp','.bmp'];
+          const images = data.files.filter(f => imageExts.some(ext => f.name.toLowerCase().endsWith(ext)));
+          const others = data.files.filter(f => !imageExts.some(ext => f.name.toLowerCase().endsWith(ext)));
+
+          // Render images
+          if(images.length > 0){
+            document.getElementById('imageSection').innerHTML = 
+              '<div class="section-title">🖼 Images</div>' +
+              '<div class="image-grid">' +
+              images.map(f => '<a href="'+f.publicUrl+'" target="_blank"><img src="'+f.publicUrl+'" alt="'+f.name+'"></a>').join('') +
+              '</div>';
+          } else {
+            document.getElementById('imageSection').innerHTML = "";
+          }
+
+          // Render other files
+          if(others.length > 0){
+            document.getElementById('fileSection').innerHTML = 
+              '<div class="section-title">📄 Files</div>' +
+              '<ul class="file-list">' +
+              others.map(f => '<li><a href="'+f.publicUrl+'" target="_blank">'+f.name+'</a></li>').join('') +
+              '</ul>';
+          } else {
+            document.getElementById('fileSection').innerHTML = "";
+          }
+
           document.getElementById('modalBg').style.display='flex';
 
           // Bind delete button
@@ -203,7 +247,7 @@ router.get("/:folder/list", async (req, res) => {
     if (error) throw error;
 
     const files = data.map(f => {
-      const g = supabase.storage.from(EXTRACTED_BUCKET).getPublicUrl(`${folder}/${f.name}`);
+      const g = supabase.storage.from(EXTRACTED_BUCKET).getPublicUrl(\`\${folder}/\${f.name}\`);
       return { ...f, publicUrl: g?.data?.publicUrl || null };
     });
 
@@ -220,7 +264,7 @@ router.delete("/:folder/delete", async (req, res) => {
     const { data, error } = await supabase.storage.from(EXTRACTED_BUCKET).list(folder);
     if (error) throw error;
 
-    const paths = data.map(f => `${folder}/${f.name}`);
+    const paths = data.map(f => \`\${folder}/\${f.name}\`);
     if (paths.length > 0) {
       const { error: delErr } = await supabase.storage.from(EXTRACTED_BUCKET).remove(paths);
       if (delErr) throw delErr;
