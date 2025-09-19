@@ -7,10 +7,11 @@ import helmet from "helmet";
 import cors from "cors";
 import session from "express-session";
 import AdmZip from "adm-zip";
+import extractedRoutes from "./routes/extracted.js";
 
 dotenv.config();
 
-// Supabase configuration
+// Supabase config
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const BUCKET = process.env.SUPABASE_BUCKET || "Receive_Files";
@@ -35,7 +36,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Session for login
+// Session
 app.use(
   session({
     secret: "supersecretkey",
@@ -44,27 +45,21 @@ app.use(
   })
 );
 
-// Multer config (upload to memory)
+// Multer
 const storage = multer.memoryStorage();
-const upload = multer({
-  storage,
-  limits: { fileSize: 1024 * 1024 * 500 }, // 500MB
-});
+const upload = multer({ storage });
 
-// Get file list
+// File list
 async function getFileList() {
-  const { data, error } = await supabase.storage
-    .from(BUCKET)
-    .list("", { limit: 1000 });
+  const { data, error } = await supabase.storage.from(BUCKET).list("", { limit: 1000 });
   if (error) throw new Error(error.message);
-
   return data.map((f) => {
     const g = supabase.storage.from(BUCKET).getPublicUrl(f.name);
     return { ...f, publicUrl: g?.data?.publicUrl || null };
   });
 }
 
-// Middleware to protect pages
+// Middleware for auth
 function requireLogin(req, res, next) {
   if (!req.session.user) return res.redirect("/login");
   next();
@@ -79,7 +74,7 @@ app.get("/login", (req, res) => {
     <style>
       body {
         display:flex; align-items:center; justify-content:center;
-        height:100vh; margin:0; font-family:Arial, sans-serif;
+        height:100vh; margin:0; font-family:Arial;
         background:linear-gradient(135deg,#009688,#4db6ac);
       }
       .login-box {
@@ -87,10 +82,7 @@ app.get("/login", (req, res) => {
         backdrop-filter:blur(10px); box-shadow:0 4px 12px rgba(0,0,0,0.3);
         width:300px; text-align:center; color:#fff;
       }
-      input {
-        width:90%; padding:10px; margin:10px 0;
-        border:none; border-radius:6px; outline:none;
-      }
+      input { width:90%; padding:10px; margin:10px 0; border:none; border-radius:6px; }
       button {
         width:100%; padding:10px; background:#004d40; color:#fff;
         border:none; border-radius:6px; cursor:pointer;
@@ -127,7 +119,7 @@ app.get("/logout", (req, res) => {
   req.session.destroy(() => res.redirect("/login"));
 });
 
-// Home Page (Dashboard)
+// Dashboard
 app.get("/", requireLogin, async (req, res) => {
   try {
     const files = await getFileList();
@@ -136,35 +128,33 @@ app.get("/", requireLogin, async (req, res) => {
     <head>
       <title>Dashboard</title>
       <style>
-        body { margin:0; font-family: Arial; background: #f4f6f9; }
+        body { margin:0; font-family: Arial; background:#f4f6f9; }
+        header { background:#004d40; color:white; padding:15px; text-align:center; font-size:1.5em; }
         .sidebar {
           position:fixed; top:0; left:-220px; width:200px; height:100%;
           background:#004d40; color:white; padding-top:60px;
-          transition:0.3s; overflow:hidden;
+          transition:0.3s;
         }
         .sidebar a {
-          display:block; padding:12px; color:white;
-          text-decoration:none; font-weight:500;
+          display:block; padding:12px; color:white; text-decoration:none; font-weight:500;
         }
         .sidebar a:hover { background:#00796b; }
-        #menuBtn {
-          position:fixed; top:20px; left:10px;
-          background:#004d40; color:white; border:none;
-          border-radius:50%; width:40px; height:40px;
-          cursor:pointer; z-index:1000;
+        #menuArrow {
+          position:fixed; top:50%; left:0;
+          background:#004d40; color:white; padding:8px;
+          border-radius:0 5px 5px 0; cursor:pointer;
+          z-index:1000;
         }
-        .content { margin-left:20px; padding:20px; }
-        .table-wrapper { overflow-x:auto; }
-        table { width:100%; border-collapse:collapse; }
-        thead { background:#009688; color:#fff; }
-        th, td { padding:12px; border-bottom:1px solid #ddd; }
+        .content { padding:20px; margin-left:20px; }
+        table { width:100%; border-collapse:collapse; background:white; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+        thead { background:#009688; color:white; }
+        th, td { padding:12px; border-bottom:1px solid #ddd; text-align:center; }
         tbody tr:nth-child(even) { background:#f9f9f9; }
-        a { color:#009688; text-decoration:none; }
-        a:hover { text-decoration:underline; }
       </style>
     </head>
     <body>
-      <button id="menuBtn">☰</button>
+      <header>🏠 Admin Dashboard</header>
+      <div id="menuArrow">➡</div>
       <div id="sidebar" class="sidebar">
         <a href="/">🏠 Dashboard</a>
         <a href="/extracted">📂 Extracted Files</a>
@@ -175,40 +165,46 @@ app.get("/", requireLogin, async (req, res) => {
       </div>
 
       <div class="content">
-        <h1>Admin Dashboard</h1>
-        <p>Welcome, ${req.session.user.username}</p>
-        <p>📂 Bucket: <strong>${BUCKET}</strong></p>
-
         <h2>Stored Files</h2>
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr><th>Name</th><th>Type</th><th>Size</th><th>Last Modified</th><th>Action</th></tr>
-            </thead>
-            <tbody>
-            ${files.map(f => `
-              <tr>
-                <td>${f.name}</td>
-                <td>${f.metadata?.mimetype || "N/A"}</td>
-                <td>${f.metadata?.size || "?"} bytes</td>
-                <td>${f.updated_at || "N/A"}</td>
-                <td>${f.name.endsWith(".zip") 
-                  ? `<a href="/extract/${encodeURIComponent(f.name)}">Extract</a>` 
-                  : "-"}</td>
-              </tr>`).join('')}
-            </tbody>
-          </table>
-        </div>
+        <table>
+          <thead>
+            <tr><th>Name</th><th>Type</th><th>Size</th><th>Last Modified</th><th>Action</th></tr>
+          </thead>
+          <tbody>
+          ${files.map(f => `
+            <tr>
+              <td>${f.name}</td>
+              <td>${f.metadata?.mimetype || "N/A"}</td>
+              <td>${f.metadata?.size || "?"} bytes</td>
+              <td>${f.updated_at || "N/A"}</td>
+              <td>${f.name.endsWith(".zip") 
+                ? `<a href="/extract/${encodeURIComponent(f.name)}">Extract</a>` 
+                : "-"}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
       </div>
 
       <script>
+        const menuArrow=document.getElementById("menuArrow");
         const sidebar=document.getElementById("sidebar");
-        const btn=document.getElementById("menuBtn");
-        let open=false;
-        btn.onclick=()=>{ 
-          if(open){ sidebar.style.left="-220px"; btn.innerText="☰"; open=false; }
-          else{ sidebar.style.left="0"; btn.innerText="←"; open=true; }
-        }
+        menuArrow.addEventListener("click",()=> {
+          sidebar.classList.toggle("active");
+          if(sidebar.classList.contains("active")) {
+            sidebar.style.left="0";
+            menuArrow.style.display="none";
+          } else {
+            sidebar.style.left="-220px";
+            menuArrow.style.display="block";
+          }
+        });
+        document.addEventListener("click",(e)=>{
+          if(!sidebar.contains(e.target) && !menuArrow.contains(e.target)){
+            sidebar.classList.remove("active");
+            sidebar.style.left="-220px";
+            menuArrow.style.display="block";
+          }
+        });
       </script>
     </body>
     </html>
@@ -218,17 +214,15 @@ app.get("/", requireLogin, async (req, res) => {
   }
 });
 
-// Extract ZIP into another bucket
+// Extract ZIP into another bucket and delete original
 app.get("/extract/:fileName", requireLogin, async (req, res) => {
   const fileName = req.params.fileName;
-
   try {
     const { data, error } = await supabase.storage.from(BUCKET).download(fileName);
     if (error) throw error;
 
     const buffer = Buffer.from(await data.arrayBuffer());
     const zip = new AdmZip(buffer);
-
     const zipBase = fileName.replace(/\.zip$/i, "");
     const entries = zip.getEntries();
 
@@ -236,40 +230,34 @@ app.get("/extract/:fileName", requireLogin, async (req, res) => {
       if (entry.isDirectory) continue;
       const filePath = `${zipBase}/${entry.entryName}`;
       const content = entry.getData();
-
-      const { error: upErr } = await supabase.storage
-        .from(EXTRACTED_BUCKET)
-        .upload(filePath, content, { upsert: true });
-      if (upErr) throw upErr;
+      await supabase.storage.from(EXTRACTED_BUCKET).upload(filePath, content, { upsert: true });
     }
 
-    res.send(`<h3>✅ Extracted ${fileName} into ${EXTRACTED_BUCKET}/${zipBase} <br><a href="/">⬅ Back</a></h3>`);
+    // Delete original zip
+    await supabase.storage.from(BUCKET).remove([fileName]);
+
+    res.redirect("/extracted");
   } catch (err) {
     console.error("❌ Extract error:", err);
     res.status(500).send("Error extracting: " + err.message);
   }
 });
 
-// Upload ZIP only
+// Upload ZIP
 app.post("/upload-zip", requireLogin, upload.single("file"), async (req, res) => {
-  if (!req.file) return res.status(400).json({ error: "No file attached (field name = file)" });
+  if (!req.file) return res.status(400).json({ error: "No file attached" });
   try {
-    const fileName = req.file.originalname;
-    const fileBuffer = req.file.buffer;
-    const { error } = await supabase.storage.from(BUCKET).upload(fileName, fileBuffer, {
+    await supabase.storage.from(BUCKET).upload(req.file.originalname, req.file.buffer, {
       upsert: true,
       contentType: "application/zip",
     });
-    if (error) throw error;
-    res.json({ ok: true, uploaded: fileName });
+    res.json({ ok: true, uploaded: req.file.originalname });
   } catch (err) {
-    console.error("❌ Upload error:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// Mount extracted routes separately
-import extractedRoutes from "./routes/extracted.js";
+// Mount extracted routes
 app.use("/extracted", requireLogin, extractedRoutes);
 
 // Start server
