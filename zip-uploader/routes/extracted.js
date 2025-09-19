@@ -23,50 +23,81 @@ router.get("/", async (req, res) => {
     <html>
     <head>
       <title>Extracted Files</title>
-      <style>
-        body { margin:0; font-family: Arial; background:#f4f6f9; }
-        header { background:#004d40; color:white; padding:15px; text-align:center; font-size:1.5em; }
-        .sidebar {
-          position:fixed; top:0; left:-220px; width:200px; height:100%;
-          background:#004d40; color:white; padding-top:60px;
-          transition:0.3s; z-index:999;
-        }
-        .sidebar a {
-          display:block; padding:12px; color:white; text-decoration:none; font-weight:500;
-        }
-        .sidebar a:hover { background:#00796b; }
-        #menuArrow {
-          position:fixed; top:50%; left:0;
-          background:#004d40; color:white; padding:8px;
-          border-radius:0 5px 5px 0; cursor:pointer;
-          z-index:1000;
-        }
-        .content { padding:20px; margin-left:20px; }
-        table { width:100%; border-collapse:collapse; background:white; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
-        thead { background:#009688; color:white; }
-        th, td { padding:12px; border-bottom:1px solid #ddd; text-align:center; }
-        tbody tr:nth-child(even) { background:#f9f9f9; }
-        .modal-bg {
-          position:fixed; top:0; left:0; width:100%; height:100%;
-          background:rgba(0,0,0,0.6); backdrop-filter: blur(6px);
-          display:none; justify-content:center; align-items:center; z-index:2000;
-        }
-        .modal {
-          background:#fff; padding:20px; border-radius:10px;
-          max-width:600px; width:80%; max-height:80vh; overflow:auto;
-          box-shadow:0 4px 15px rgba(0,0,0,0.3); position:relative;
-        }
-        .modal h2 { margin-top:0; }
-        .close-btn, .delete-btn {
-          position:absolute; top:10px; padding:6px 12px; border:none;
-          border-radius:4px; cursor:pointer; color:#fff;
-        }
-        .close-btn { right:10px; background:#333; }
-        .delete-btn { left:10px; background:#b71c1c; }
-        .file-list { list-style:none; padding:0; }
-        .file-list li { padding:6px 0; border-bottom:1px solid #eee; }
-        .file-list a { text-decoration:none; color:#00796b; font-weight:500; }
-      </style>
+     <style>
+  body { margin:0; font-family: Arial, sans-serif; background:#f4f6f9; }
+  header { background:#004d40; color:white; padding:15px; text-align:center; font-size:1.5em; }
+  
+  /* Sidebar */
+  .sidebar {
+    position:fixed; top:0; left:-220px; width:200px; height:100%;
+    background:#004d40; color:white; padding-top:60px;
+    transition:0.3s; z-index:999;
+  }
+  .sidebar a {
+    display:block; padding:12px; color:white; text-decoration:none; font-weight:500;
+  }
+  .sidebar a:hover { background:#00796b; }
+  
+  /* Sidebar toggle arrow */
+  #menuArrow {
+    position:fixed; top:50%; left:0;
+    background:#004d40; color:white; padding:8px;
+    border-radius:0 5px 5px 0; cursor:pointer;
+    z-index:1000;
+  }
+  
+  /* Page content */
+  .content { padding:20px; margin-left:20px; }
+  table { width:100%; border-collapse:collapse; background:white; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+  thead { background:#009688; color:white; }
+  th, td { padding:12px; border-bottom:1px solid #ddd; text-align:center; }
+  tbody tr:nth-child(even) { background:#f9f9f9; }
+  
+  /* Modal background */
+  .modal-bg {
+    position:fixed; top:0; left:0; width:100%; height:100%;
+    background:rgba(0,0,0,0.6); backdrop-filter: blur(6px);
+    display:none; justify-content:center; align-items:center; z-index:2000;
+  }
+  
+  /* Modal box */
+  .modal {
+    background:#fff; padding:20px; border-radius:12px;
+    max-width:700px; width:80%;
+    box-shadow:0 6px 20px rgba(0,0,0,0.25);
+  }
+  
+  /* Modal header */
+  .modal-header {
+    display:flex; justify-content:space-between; align-items:center;
+    border-bottom:1px solid #ddd; padding-bottom:10px; margin-bottom:15px;
+  }
+  .modal-header h2 { margin:0; font-size:1.3em; color:#004d40; }
+  .modal-header button {
+    background:#333; color:#fff; border:none; padding:6px 12px;
+    border-radius:6px; cursor:pointer;
+  }
+  
+  /* File list */
+  .file-list { list-style:none; padding:0; margin:0; }
+  .file-list li {
+    padding:8px 0; border-bottom:1px solid #eee;
+    word-wrap:break-word; white-space:normal;
+  }
+  .file-list a {
+    text-decoration:none; color:#00796b; font-weight:500;
+  }
+  
+  /* Modal footer */
+  .modal-footer {
+    text-align:right; margin-top:15px;
+  }
+  .modal-footer button {
+    background:#b71c1c; color:#fff; border:none; padding:8px 14px;
+    border-radius:6px; cursor:pointer;
+  }
+</style>
+
     </head>
     <body>
       <header>📂 Extracted Files</header>
@@ -94,14 +125,19 @@ router.get("/", async (req, res) => {
         </table>
       </div>
 
-      <div class="modal-bg" id="modalBg">
-        <div class="modal">
-          <button class="delete-btn" id="deleteBtn">🗑 Delete</button>
-          <button class="close-btn" onclick="closeModal()">✖ Close</button>
-          <h2 id="folderTitle"></h2>
-          <ul id="fileList" class="file-list"></ul>
-        </div>
-      </div>
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="folderTitle"></h2>
+      <button onclick="closeModal()">✖ Close</button>
+    </div>
+    <ul id="fileList" class="file-list"></ul>
+    <div class="modal-footer">
+      <button id="deleteBtn">🗑 Delete Folder</button>
+    </div>
+  </div>
+</div>
+
 
       <script>
         const menuArrow=document.getElementById("menuArrow");
