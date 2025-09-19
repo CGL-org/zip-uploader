@@ -236,6 +236,13 @@ app.get("/extract/:fileName", requireLogin, async (req, res) => {
     // Delete original zip
     await supabase.storage.from(BUCKET).remove([fileName]);
 
+    const metaFilePath = `${zipBase}/.extracted.json`;
+    await supabase.storage.from(EXTRACTED_BUCKET).upload(
+      metaFilePath,
+      Buffer.from(JSON.stringify({ extractedAt: new Date().toISOString() })),
+      { upsert: true, contentType: "application/json" }
+    );
+    
     res.redirect("/extracted");
   } catch (err) {
     console.error("❌ Extract error:", err);
