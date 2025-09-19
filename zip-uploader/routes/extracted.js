@@ -264,7 +264,7 @@ router.delete("/:folder/delete", async (req, res) => {
     const { data, error } = await supabase.storage.from(EXTRACTED_BUCKET).list(folder);
     if (error) throw error;
 
-    const paths = data.map(f => \`\${folder}/\${f.name}\`);
+    const paths = data.map(f => `${folder}/${f.name}`);
     if (paths.length > 0) {
       const { error: delErr } = await supabase.storage.from(EXTRACTED_BUCKET).remove(paths);
       if (delErr) throw delErr;
