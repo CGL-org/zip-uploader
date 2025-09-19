@@ -146,14 +146,24 @@ router.get("/", async (req, res) => {
       <div class="content">
         <h2>Available Folders</h2>
         <table>
-          <thead><tr><th>Folder</th><th>Action</th></tr></thead>
-          <tbody>
-            ${data.map(f => `
-              <tr>
-                <td>${f.name}</td>
-                <td><button onclick="openFolder('${f.name}')">View</button></td>
-              </tr>`).join("")}
-          </tbody>
+<thead><tr><th>Folder</th><th>Date Extracted</th><th>Action</th></tr></thead>
+<tbody>
+  ${await Promise.all(data.map(async f => {
+    let extractedAt = "N/A";
+    const { data: meta } = await supabase.storage.from(EXTRACTED_BUCKET).download(`${f.name}/.extracted.json`);
+    if (meta) {
+      const txt = await meta.text();
+      try { extractedAt = JSON.parse(txt).extractedAt; } catch {}
+    }
+    return `
+      <tr>
+        <td>${f.name}</td>
+        <td>${extractedAt}</td>
+        <td><button onclick="openFolder('${f.name}')">View</button></td>
+      </tr>`;
+  })).then(rows => rows.join(""))}
+</tbody>
+
         </table>
       </div>
 
