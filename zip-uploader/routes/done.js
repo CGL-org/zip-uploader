@@ -99,7 +99,7 @@ router.get("/", async (req, res) => {
                 const txt = await meta.text();
                 try { completedAt = JSON.parse(txt).completedAt; } catch {}
               }
-              return \`
+              return `
                 <tr>
                   <td data-label="Folder">\${f.name}</td>
                   <td data-label="Date Completed">\${completedAt}</td>
