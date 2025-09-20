@@ -13,7 +13,7 @@ const EXTRACTED_BUCKET = "Extracted_Files";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ========== PAGE: Extracted Files ==========
+// Extracted files main page
 router.get("/", async (req, res) => {
   try {
     const { data, error } = await supabase.storage.from(EXTRACTED_BUCKET).list("");
@@ -22,36 +22,39 @@ router.get("/", async (req, res) => {
     res.send(`
     <html>
     <head>
-      <title>Extracted Files</title>
       <style>
         body { margin:0; font-family: Arial; background:#f4f6f9; }
         header { background:#004d40; color:white; padding:15px; text-align:center; font-size:1.5em; }
-        table { width:100%; border-collapse:collapse; margin-top:20px; }
-        th,td { border:1px solid #ddd; padding:10px; text-align:left; }
-        th { background:#004d40; color:white; }
-        tr:nth-child(even) { background:#f2f2f2; }
-        button { background:#00796b; color:white; border:none; padding:5px 10px; cursor:pointer; }
+        table { width:100%; border-collapse: collapse; margin-top:20px; background:white; }
+        th, td { padding:12px; border:1px solid #ddd; text-align:left; }
+        th { background:#00796b; color:white; }
+        tr:hover { background:#f1f1f1; }
+        button { padding:6px 12px; background:#00796b; color:white; border:none; border-radius:4px; cursor:pointer; }
         button:hover { background:#004d40; }
-        .sidebar { position:fixed; top:0; left:-220px; width:200px; height:100%; background:#004d40; color:white; padding-top:60px; transition:0.3s; z-index:100; }
-        .sidebar a { padding:10px 15px; display:block; color:white; text-decoration:none; }
-        .sidebar a:hover { background:#00796b; }
-        #menuArrow { position:fixed; top:15px; left:15px; cursor:pointer; background:#004d40; color:white; padding:10px; border-radius:5px; z-index:101; }
-        .content { padding:20px; margin-left:20px; }
-        .modal-bg { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:200; }
-        .modal { background:white; padding:20px; border-radius:10px; width:80%; max-height:90%; overflow-y:auto; }
+        .modal-bg { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; }
+        .modal { background:white; padding:20px; width:90%; max-width:800px; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,0.3); }
         .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
-        .modal-footer { text-align:right; margin-top:10px; }
-        .image-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px; margin-top:10px; }
-        .image-grid img { width:100%; height:100px; object-fit:cover; cursor:pointer; border-radius:8px; }
-        .section-title { font-weight:bold; margin-top:15px; }
-        .file-list { list-style:none; padding:0; margin:0; }
-        .file-list li { margin:5px 0; }
+        .modal-header h2 { margin:0; font-size:1.2em; }
+        .modal-header button { background:#e53935; }
+        .modal-header button:hover { background:#ab000d; }
+        .modal-footer { margin-top:20px; text-align:right; }
+        .section-title { font-weight:bold; margin-top:15px; margin-bottom:8px; }
+        .image-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap:10px; }
+        .image-grid img { width:100%; height:120px; object-fit:cover; border-radius:6px; cursor:pointer; transition:transform 0.2s; }
+        .image-grid img:hover { transform: scale(1.05); }
+        .file-list { list-style:none; padding:0; }
+        .file-list li { margin-bottom:8px; }
         .file-list a { color:#00796b; text-decoration:none; }
         .file-list a:hover { text-decoration:underline; }
-        /* Fullscreen image modal */
-        #imageModal { display:none; position:fixed; z-index:300; padding-top:60px; left:0; top:0; width:100%; height:100%; overflow:auto; background-color:rgba(0,0,0,0.9); }
-        #imageModal img { margin:auto; display:block; max-width:80%; max-height:80%; }
-        #imageModal span { position:absolute; top:30px; right:35px; color:#fff; font-size:40px; font-weight:bold; cursor:pointer; }
+        /* Sidebar */
+        .sidebar { position:fixed; top:0; left:-220px; width:200px; height:100%; background:#004d40; color:white; padding-top:60px; transition:0.3s; }
+        .sidebar a { padding:10px 15px; display:block; color:white; text-decoration:none; }
+        .sidebar a:hover { background:#00796b; }
+        #menuArrow { position:fixed; top:15px; left:15px; font-size:20px; color:white; background:#00796b; padding:5px 10px; border-radius:4px; cursor:pointer; z-index:1000; }
+        /* Image modal full view */
+        #imageModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); justify-content:center; align-items:center; z-index:2000; }
+        #imageModal img { max-width:90%; max-height:80%; border-radius:8px; }
+        #imageModal span { position:absolute; top:20px; right:35px; color:white; font-size:40px; font-weight:bold; cursor:pointer; }
       </style>
     </head>
     <body>
@@ -64,7 +67,7 @@ router.get("/", async (req, res) => {
         <a href="/logout">🚪 Logout</a>
       </div>
       <div class="content">
-        <h2>Available Folders</h2>
+        <h2 style="margin-left:15px;">Available Folders</h2>
         <table>
           <thead><tr><th>Folder</th><th>Date Extracted</th><th>Action</th></tr></thead>
           <tbody>
@@ -86,7 +89,6 @@ router.get("/", async (req, res) => {
         </table>
       </div>
 
-      <!-- Folder modal -->
       <div class="modal-bg" id="modalBg">
         <div class="modal">
           <div class="modal-header">
@@ -96,6 +98,7 @@ router.get("/", async (req, res) => {
           <div id="imageSection"></div>
           <div id="fileSection"></div>
           <div class="modal-footer">
+            <!-- Changed Delete to Done -->
             <button id="doneBtn">✅ Done</button>
           </div>
         </div>
@@ -158,9 +161,9 @@ router.get("/", async (req, res) => {
 
           document.getElementById('modalBg').style.display='flex';
 
-          // Bind Done button
+          // Bind the Done button
           document.getElementById('doneBtn').onclick = async () => {
-            if(confirm("Mark '"+folder+"' as Done? This moves it to Completed.")) {
+            if(confirm("Mark folder '"+folder+"' as Done? It will move to Completed.")) {
               const move = await fetch('/done/'+folder+'/done', { method:'POST' });
               if(move.ok){
                 alert("Folder moved to Completed.");
@@ -174,10 +177,9 @@ router.get("/", async (req, res) => {
 
         function closeModal(){ document.getElementById('modalBg').style.display='none'; }
 
-        // image expand modal
         function openImageModal(src){
           document.getElementById("fullImage").src = src;
-          document.getElementById("imageModal").style.display = "block";
+          document.getElementById("imageModal").style.display = "flex";
         }
         function closeImageModal(){
           document.getElementById("imageModal").style.display = "none";
@@ -191,7 +193,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-// ========== API: List files inside folder ==========
+// List contents of extracted folder
 router.get("/:folder/list", async (req, res) => {
   const folder = req.params.folder;
   try {
@@ -204,25 +206,6 @@ router.get("/:folder/list", async (req, res) => {
     });
 
     res.json({ files });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ========== API: Delete folder (optional) ==========
-router.delete("/:folder/delete", async (req, res) => {
-  const folder = req.params.folder;
-  try {
-    const { data, error } = await supabase.storage.from(EXTRACTED_BUCKET).list(folder);
-    if (error) throw error;
-
-    const paths = data.map(f => \`\${folder}/\${f.name}\`);
-    if (paths.length > 0) {
-      const { error: delErr } = await supabase.storage.from(EXTRACTED_BUCKET).remove(paths);
-      if (delErr) throw delErr;
-    }
-
-    res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
