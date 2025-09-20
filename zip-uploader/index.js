@@ -79,14 +79,20 @@ app.get("/login", (req, res) => {
         background:linear-gradient(135deg,#009688,#4db6ac);
       }
       .login-box {
-        background:rgba(255,255,255,0.2); padding:30px; border-radius:12px;
-        backdrop-filter:blur(10px); box-shadow:0 4px 12px rgba(0,0,0,0.3);
-        width:300px; text-align:center; color:#fff;
+        background:rgba(255,255,255,0.15); padding:30px; border-radius:15px;
+        backdrop-filter:blur(10px); box-shadow:0 4px 20px rgba(0,0,0,0.3);
+        width:320px; text-align:center; color:#fff;
       }
-      input { width:90%; padding:10px; margin:10px 0; border:none; border-radius:6px; }
+      input {
+        width:90%; padding:12px; margin:10px 0; border:none;
+        border-radius:8px; background:rgba(255,255,255,0.2); color:#fff;
+        font-size:1em; outline:none;
+      }
+      input::placeholder { color:#eee; }
       button {
-        width:100%; padding:10px; background:#004d40; color:#fff;
-        border:none; border-radius:6px; cursor:pointer;
+        width:100%; padding:12px; background:#004d40; color:#fff;
+        border:none; border-radius:8px; font-size:1em; cursor:pointer;
+        transition:0.3s;
       }
       button:hover { background:#00332c; }
     </style>
@@ -129,44 +135,56 @@ app.get("/", requireLogin, async (req, res) => {
     <head>
       <title>Dashboard</title>
       <style>
-        body { margin:0; font-family: Arial; background:#f4f6f9; }
+        body { margin:0; font-family: 'Segoe UI', sans-serif; background:#f4f6f9; }
         header { background:#004d40; color:white; padding:15px; text-align:center; font-size:1.5em; }
+
+        /* Sidebar */
         .sidebar {
-          position:fixed; top:0; left:-220px; width:200px; height:100%;
-          background:#004d40; color:white; padding-top:60px;
-          transition:0.3s;
+          position:fixed; top:0; left:-240px; width:220px; height:100%;
+          background:#004d40; color:white; padding-top:60px; transition:0.3s;
+          box-shadow:2px 0 6px rgba(0,0,0,0.2);
         }
         .sidebar a {
-          display:block; padding:12px; color:white; text-decoration:none; font-weight:500;
+          display:block; padding:14px 18px; color:white; text-decoration:none;
+          font-weight:500; transition:0.2s;
         }
-        .sidebar a:hover { background:#00796b; }
-        #menuArrow {
-          position:fixed; top:50%; left:0;
-          background:#004d40; color:white; padding:8px;
-          border-radius:0 5px 5px 0; cursor:pointer;
-          z-index:1000;
+        .sidebar a:hover { background:#00796b; padding-left:25px; }
+
+        /* Menu Button */
+        #menuBtn {
+          position:fixed; top:15px; left:15px; background:#004d40;
+          color:white; border:none; padding:10px 14px; cursor:pointer;
+          border-radius:6px; font-size:1em; z-index:1000;
         }
-        .content { padding:20px; margin-left:20px; }
-        table { width:100%; border-collapse:collapse; background:white; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+
+        /* Content */
+        .content { padding:20px; margin-left:0; transition:margin-left 0.3s; }
+        .active + .content { margin-left:220px; }
+
+        /* Table */
+        table { width:100%; border-collapse:collapse; background:white;
+          box-shadow:0 2px 8px rgba(0,0,0,0.1); border-radius:8px; overflow:hidden; }
         thead { background:#009688; color:white; }
         th, td { padding:12px; border-bottom:1px solid #ddd; text-align:center; }
         tbody tr:nth-child(even) { background:#f9f9f9; }
+        tbody tr:hover { background:#e0f2f1; }
       </style>
     </head>
     <body>
       <header>🏠 Admin Dashboard</header>
-      <div id="menuArrow">➡</div>
+      <button id="menuBtn">☰ Menu</button>
       <div id="sidebar" class="sidebar">
         <a href="/">🏠 Dashboard</a>
         <a href="/extracted">📂 Extracted Files</a>
+        <a href="/done">✅ Completed</a>
         <a href="#">➕ Create Account</a>
         <a href="#">✏ Update Account</a>
         <a href="#">🗑 Delete Account</a>
         <a href="/logout">🚪 Logout</a>
       </div>
 
-      <div class="content">
-        <h2>Stored Files</h2>
+      <div class="content" id="mainContent">
+        <h2>📦 Stored Files</h2>
         <table>
           <thead>
             <tr><th>Name</th><th>Type</th><th>Size</th><th>Last Modified</th><th>Action</th></tr>
@@ -187,23 +205,15 @@ app.get("/", requireLogin, async (req, res) => {
       </div>
 
       <script>
-        const menuArrow=document.getElementById("menuArrow");
+        const menuBtn=document.getElementById("menuBtn");
         const sidebar=document.getElementById("sidebar");
-        menuArrow.addEventListener("click",()=> {
-          sidebar.classList.toggle("active");
-          if(sidebar.classList.contains("active")) {
-            sidebar.style.left="0";
-            menuArrow.style.display="none";
+        const content=document.getElementById("mainContent");
+
+        menuBtn.addEventListener("click",()=> {
+          if(sidebar.style.left==="0px"){ 
+            sidebar.style.left="-240px"; content.classList.remove("active");
           } else {
-            sidebar.style.left="-220px";
-            menuArrow.style.display="block";
-          }
-        });
-        document.addEventListener("click",(e)=>{
-          if(!sidebar.contains(e.target) && !menuArrow.contains(e.target)){
-            sidebar.classList.remove("active");
-            sidebar.style.left="-220px";
-            menuArrow.style.display="block";
+            sidebar.style.left="0"; content.classList.add("active");
           }
         });
       </script>
@@ -234,7 +244,6 @@ app.get("/extract/:fileName", requireLogin, async (req, res) => {
       await supabase.storage.from(EXTRACTED_BUCKET).upload(filePath, content, { upsert: true });
     }
 
-    // Delete original zip
     await supabase.storage.from(BUCKET).remove([fileName]);
 
     const metaFilePath = `${zipBase}/.extracted.json`;
@@ -265,7 +274,7 @@ app.post("/upload-zip", upload.single("file"), async (req, res) => {
   }
 });
 
-// Mount extracted routes
+// Mount routes
 app.use("/extracted", requireLogin, extractedRoutes);
 app.use("/done", requireLogin, doneRouter);
 
