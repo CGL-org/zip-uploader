@@ -101,10 +101,10 @@ router.get("/", async (req, res) => {
               }
               return `
                 <tr>
-                  <td data-label="Folder">\${f.name}</td>
-                  <td data-label="Date Completed">\${completedAt}</td>
-                  <td data-label="Action"><button onclick="openFolder('\${f.name}')">View</button></td>
-                </tr>\`;
+                  <td data-label="Folder">${f.name}</td>
+                  <td data-label="Date Completed">${completedAt}</td>
+                  <td data-label="Action"><button onclick="openFolder('${f.name}')">View</button></td>
+                </tr>`;
             })).then(rows => rows.join(""))}
           </tbody>
         </table>
@@ -166,8 +166,10 @@ router.get("/", async (req, res) => {
       </script>
     </body>
     </html>
-    `;
-  } catch (err) { res.status(500).send("Error: " + err.message); }
+    `);
+  } catch (err) {
+    res.status(500).send("Error: " + err.message);
+  }
 });
 
 // 📂 List contents of completed folder
@@ -178,7 +180,7 @@ router.get("/:folder/list", async (req, res) => {
     if (error) throw error;
 
     const files = data.map(f => {
-      const g = supabase.storage.from(DONE_BUCKET).getPublicUrl(\`\${folder}/\${f.name}\`);
+      const g = supabase.storage.from(DONE_BUCKET).getPublicUrl(`${folder}/${f.name}`);
       return { ...f, publicUrl: g?.data?.publicUrl || null };
     });
 
@@ -199,9 +201,9 @@ router.delete("/:folder/delete", async (req, res) => {
       return res.status(404).json({ error: "Folder not found" });
     }
 
-    await supabase.storage.from(DONE_BUCKET).remove(files.map(f => \`\${folder}/\${f.name}\`));
+    await supabase.storage.from(DONE_BUCKET).remove(files.map(f => `${folder}/${f.name}`));
 
-    res.json({ success: true, message: \`Folder \${folder} deleted.\` });
+    res.json({ success: true, message: `Folder ${folder} deleted.` });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
