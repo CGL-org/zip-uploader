@@ -8,6 +8,7 @@ import cors from "cors";
 import session from "express-session";
 import AdmZip from "adm-zip";
 import extractedRoutes from "./routes/extracted.js";
+import doneRouter from "./routes/done.js"; 
 
 dotenv.config();
 
@@ -266,6 +267,7 @@ app.post("/upload-zip", upload.single("file"), async (req, res) => {
 
 // Mount extracted routes
 app.use("/extracted", requireLogin, extractedRoutes);
+app.use("/done", requireLogin, doneRouter);
 
 // Start server
 const PORT = process.env.PORT || 3000;
