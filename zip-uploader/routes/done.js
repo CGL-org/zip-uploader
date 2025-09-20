@@ -112,57 +112,64 @@ router.get("/", async (req, res) => {
       </div>
 
       <script>
-        const menuArrow=document.getElementById("menuArrow");
-        const sidebar=document.getElementById("sidebar");
-        menuArrow.addEventListener("click",()=> {
-          sidebar.classList.toggle("active");
-          if(sidebar.classList.contains("active")) { sidebar.style.left="0"; menuArrow.style.display="none"; }
-          else { sidebar.style.left="-220px"; menuArrow.style.display="block"; }
-        });
-        document.addEventListener("click",(e)=>{ if(!sidebar.contains(e.target) && !menuArrow.contains(e.target)){ sidebar.classList.remove("active"); sidebar.style.left="-220px"; menuArrow.style.display="block"; } });
+  const menuArrow=document.getElementById("menuArrow");
+  const sidebar=document.getElementById("sidebar");
+  menuArrow.addEventListener("click",()=> {
+    sidebar.classList.toggle("active");
+    if(sidebar.classList.contains("active")) { sidebar.style.left="0"; menuArrow.style.display="none"; }
+    else { sidebar.style.left="-220px"; menuArrow.style.display="block"; }
+  });
+  document.addEventListener("click",(e)=>{ if(!sidebar.contains(e.target) && !menuArrow.contains(e.target)){ sidebar.classList.remove("active"); sidebar.style.left="-220px"; menuArrow.style.display="block"; } });
 
-        async function viewFolder(folder) {
-          document.getElementById("modalTitle").innerText = "Folder: " + folder;
-          const res = await fetch('/done/' + folder + '/files');
-          const files = await res.json();
-const sectionImages = document.getElementById("imageSection");
-const sectionFiles = document.getElementById("fileSection");
+  async function viewFolder(folder) {
+    document.getElementById("modalTitle").innerText = "Folder: " + folder;
+    const res = await fetch('/done/' + folder + '/files');
+    const files = await res.json();
 
-const imageExts = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
-const imageFiles = files.filter(f => imageExts.some(ext => f.toLowerCase().endsWith(ext)));
-const otherFiles = files.filter(f => !imageExts.some(ext => f.toLowerCase().endsWith(ext)));
+    const sectionImages = document.getElementById("imageSection");
+    const sectionFiles = document.getElementById("fileSection");
 
-if (imageFiles.length > 0) {
-  sectionImages.innerHTML = '<div class="section-title">🖼 Images</div><ul class="file-list">' +
-    imageFiles.map(f => `<li><a href="/supabase/${folder}/${f}" target="_blank">${f}</a></li>`).join('') +
-    '</ul>';
-} else {
-  sectionImages.innerHTML = "";
-}
+    const imageExts = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
+    const imageFiles = files.filter(f => imageExts.some(ext => f.toLowerCase().endsWith(ext)));
+    const otherFiles = files.filter(f => !imageExts.some(ext => f.toLowerCase().endsWith(ext)));
 
-if (otherFiles.length > 0) {
-  sectionFiles.innerHTML = '<div class="section-title">📄 Files</div><ul class="file-list">' +
-    otherFiles.map(f => `<li><a href="/supabase/${folder}/${f}" target="_blank">${f}</a></li>`).join('') +
-    '</ul>';
-} else {
-  sectionFiles.innerHTML = "<p>No files found.</p>";
-}
+    if (imageFiles.length > 0) {
+      sectionImages.innerHTML =
+        '<div class="section-title">🖼 Images</div><ul class="file-list">' +
+        imageFiles.map(f => {
+          return `<li><a href="/supabase/${folder}/${f}" target="_blank">${f}</a></li>`;
+        }).join('') +
+        '</ul>';
+    } else {
+      sectionImages.innerHTML = "";
+    }
 
+    if (otherFiles.length > 0) {
+      sectionFiles.innerHTML =
+        '<div class="section-title">📄 Files</div><ul class="file-list">' +
+        otherFiles.map(f => {
+          return `<li><a href="/supabase/${folder}/${f}" target="_blank">${f}</a></li>`;
+        }).join('') +
+        '</ul>';
+    } else {
+      sectionFiles.innerHTML = "<p>No files found.</p>";
+    }
 
-          document.getElementById("deleteBtn").onclick = () => deleteFolder(folder);
-          document.getElementById("modalBg").style.display='flex';
-        }
+    document.getElementById("deleteBtn").onclick = () => deleteFolder(folder);
+    document.getElementById("modalBg").style.display='flex';
+  }
 
-        function closeModal(){ document.getElementById("modalBg").style.display='none'; }
+  function closeModal(){ document.getElementById("modalBg").style.display='none'; }
 
-        async function deleteFolder(folder) {
-          if (!confirm("Are you sure you want to delete '" + folder + "'?")) return;
-          const res = await fetch('/done/' + folder + '/delete', { method:'DELETE' });
-          const data = await res.json();
-          if (data.ok) { alert("Folder deleted."); window.location.reload(); }
-          else alert("Error: " + data.error);
-        }
-      </script>
+  async function deleteFolder(folder) {
+    if (!confirm("Are you sure you want to delete '" + folder + "'?")) return;
+    const res = await fetch('/done/' + folder + '/delete', { method:'DELETE' });
+    const data = await res.json();
+    if (data.ok) { alert("Folder deleted."); window.location.reload(); }
+    else alert("Error: " + data.error);
+  }
+</script>
+
     </body>
     </html>
     `);
