@@ -39,7 +39,7 @@ router.get("/", async (req, res) => {
         button { background:#2e7d32; color:white; border:none; padding:6px 12px; cursor:pointer; border-radius:4px; }
         button:hover { background:#1b5e20; }
 
-        /* Floating modal styles (same as extracted.js) */
+        /* Floating modal styles */
         .modal-bg { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); backdrop-filter: blur(6px); display:none; justify-content:center; align-items:center; z-index:2000; }
         .modal { background:#fff; padding:20px; border-radius:12px; max-width:900px; width:90%; max-height:85vh; overflow-y:auto; box-shadow:0 6px 20px rgba(0,0,0,0.25); }
         .modal-header { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd; padding-bottom:10px; margin-bottom:15px; }
@@ -137,7 +137,7 @@ router.get("/", async (req, res) => {
       sectionImages.innerHTML =
         '<div class="section-title">🖼 Images</div><ul class="file-list">' +
         imageFiles.map(f => {
-          return `<li><a href="/supabase/${folder}/${f}" target="_blank">${f}</a></li>`;
+          return \`<li><a href="/supabase/\${folder}/\${f}" target="_blank">\${f}</a></li>\`;
         }).join('') +
         '</ul>';
     } else {
@@ -148,7 +148,7 @@ router.get("/", async (req, res) => {
       sectionFiles.innerHTML =
         '<div class="section-title">📄 Files</div><ul class="file-list">' +
         otherFiles.map(f => {
-          return `<li><a href="/supabase/${folder}/${f}" target="_blank">${f}</a></li>`;
+          return \`<li><a href="/supabase/\${folder}/\${f}" target="_blank">\${f}</a></li>\`;
         }).join('') +
         '</ul>';
     } else {
