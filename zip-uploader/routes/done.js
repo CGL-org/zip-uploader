@@ -13,7 +13,7 @@ const COMPLETED_BUCKET = "Completed";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Completed files main page
+// ✅ Completed files main page
 router.get("/", async (req, res) => {
   try {
     const { data, error } = await supabase.storage.from(COMPLETED_BUCKET).list("");
@@ -38,23 +38,27 @@ router.get("/", async (req, res) => {
         button { background:#2e7d32; color:white; border:none; padding:6px 12px; cursor:pointer; border-radius:4px; }
         button:hover { background:#1b5e20; }
 
-        /* Floating modal styles */
+        /* Floating modal styles (same as extracted.js) */
         .modal-bg { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); backdrop-filter: blur(6px); display:none; justify-content:center; align-items:center; z-index:2000; }
         .modal { background:#fff; padding:20px; border-radius:12px; max-width:900px; width:90%; max-height:85vh; overflow-y:auto; box-shadow:0 6px 20px rgba(0,0,0,0.25); }
         .modal-header { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd; padding-bottom:10px; margin-bottom:15px; }
         .modal-header h2 { margin:0; font-size:1.3em; color:#1b5e20; }
         .modal-header button { background:#333; color:#fff; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; }
         .section-title { font-size:1.1em; font-weight:bold; color:#1b5e20; margin:15px 0 10px; }
-        .file-list { list-style:none; padding:0; margin:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; }
-        .file-list li { border:1px solid #eee; padding:6px; border-radius:6px; text-align:center; background:#fafafa; cursor:pointer; }
-        .file-list img { max-width:100%; height:100px; object-fit:cover; border-radius:6px; }
+        .image-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:10px; }
+        .image-grid img { width:100%; height:100px; object-fit:cover; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.2); cursor:pointer; transition:transform 0.2s; }
+        .image-grid img:hover { transform:scale(1.05); }
+        .file-list { list-style:none; padding:0; margin:0; }
+        .file-list li { padding:8px 0; border-bottom:1px solid #eee; word-wrap:break-word; white-space:normal; }
+        .file-list a { text-decoration:none; color:#2e7d32; font-weight:500; }
         .modal-footer { text-align:right; margin-top:15px; }
         .modal-footer button { background:#c62828; color:#fff; border:none; padding:8px 14px; border-radius:6px; cursor:pointer; }
         .modal-footer button:hover { background:#b71c1c; }
 
         /* Full image preview */
-        #imagePreviewBg { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); display:none; justify-content:center; align-items:center; z-index:3000; }
-        #imagePreviewBg img { max-width:90%; max-height:90%; border-radius:12px; }
+        #imageModal { display:none; position:fixed; z-index:3000; padding-top:50px; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.9); }
+        #imageModal img { margin:auto; display:block; max-width:90%; max-height:90%; }
+        #imageModal span { position:absolute; top:20px; right:35px; color:#fff; font-size:40px; font-weight:bold; cursor:pointer; }
       </style>
     </head>
     <body>
@@ -115,9 +119,7 @@ router.get("/", async (req, res) => {
       </div>
 
       <!-- Full Image Preview -->
-      <div id="imagePreviewBg" onclick="this.style.display='none'">
-        <img id="imagePreview" src="" />
-      </div>
+      <div id="imageModal"><span onclick="closeImageModal()">&times;</span><img id="fullImage"></div>
 
       <script>
   const menuArrow=document.getElementById("menuArrow");
@@ -129,65 +131,32 @@ router.get("/", async (req, res) => {
   });
   document.addEventListener("click",(e)=>{ if(!sidebar.contains(e.target) && !menuArrow.contains(e.target)){ sidebar.classList.remove("active"); sidebar.style.left="-220px"; menuArrow.style.display="block"; } });
 
+  let currentFolder = null;
   async function viewFolder(folder) {
-    document.getElementById("modalTitle").innerText = "Folder: " + folder;
+    currentFolder = folder;
     const res = await fetch('/done/' + folder + '/files');
-    const files = await res.json();
+    const data = await res.json();
+    document.getElementById("modalTitle").innerText = folder;
 
-    const sectionImages = document.getElementById("imageSection");
-    const sectionFiles = document.getElementById("fileSection");
+    const imageExts = ['.png','.jpg','.jpeg','.gif','.webp','.bmp'];
+    const images = data.files.filter(f => imageExts.some(ext => f.name.toLowerCase().endsWith(ext)));
+    const others = data.files.filter(f => !imageExts.some(ext => f.name.toLowerCase().endsWith(ext)));
 
-    const imageExts = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
-    const imageFiles = files.filter(f => imageExts.some(ext => f.toLowerCase().endsWith(ext)));
-    const otherFiles = files.filter(f => !imageExts.some(ext => f.toLowerCase().endsWith(ext)));
+    if(images.length > 0){
+      document.getElementById('imageSection').innerHTML = '<div class="section-title">🖼 Images</div><div class="image-grid">' + images.map(f => '<img src="'+f.publicUrl+'" alt="'+f.name+'" onclick="openImageModal(\\''+f.publicUrl+'\\')">').join('') + '</div>';
+    } else { document.getElementById('imageSection').innerHTML = ""; }
 
-    if (imageFiles.length > 0) {
-      sectionImages.innerHTML =
-        '<div class="section-title">🖼 Images</div><ul class="file-list">' +
-        imageFiles.map(f => {
-          return \`<li onclick="showImage('/supabase/\${folder}/\${f}')"><img src="/supabase/\${folder}/\${f}" alt="\${f}" /><div>\${f}</div></li>\`;
-        }).join('') +
-        '</ul>';
-    } else {
-      sectionImages.innerHTML = "";
-    }
-
-    if (otherFiles.length > 0) {
-      sectionFiles.innerHTML =
-        '<div class="section-title">📄 Files</div><ul class="file-list">' +
-        otherFiles.map(f => {
-          return \`<li onclick="viewFile('/supabase/\${folder}/\${f}', '\${f}')">\${f}</li>\`;
-        }).join('') +
-        '</ul>';
-    } else {
-      sectionFiles.innerHTML = "<p>No files found.</p>";
-    }
+    if(others.length > 0){
+      document.getElementById('fileSection').innerHTML = '<div class="section-title">📄 Files</div><ul class="file-list">' + others.map(f => '<li><a href="'+f.publicUrl+'" target="_blank">'+f.name+'</a></li>').join('') + '</ul>';
+    } else { document.getElementById('fileSection').innerHTML = ""; }
 
     document.getElementById("deleteBtn").onclick = () => deleteFolder(folder);
     document.getElementById("modalBg").style.display='flex';
   }
 
   function closeModal(){ document.getElementById("modalBg").style.display='none'; }
-
-  function showImage(src) {
-    document.getElementById("imagePreview").src = src;
-    document.getElementById("imagePreviewBg").style.display='flex';
-  }
-
-  async function viewFile(url, name) {
-    let contentHtml = "";
-    if (name.toLowerCase().endsWith(".txt") || name.toLowerCase().endsWith(".log")) {
-      const res = await fetch(url);
-      const txt = await res.text();
-      contentHtml = "<pre style='text-align:left; white-space:pre-wrap;'>" + txt + "</pre>";
-    } else if (name.toLowerCase().endsWith(".pdf")) {
-      contentHtml = "<iframe src='" + url + "' width='100%' height='500px'></iframe>";
-    } else {
-      contentHtml = "<a href='" + url + "' target='_blank'>Download " + name + "</a>";
-    }
-    document.getElementById("fileSection").innerHTML =
-      '<div class="section-title">📄 File Preview</div>' + contentHtml;
-  }
+  function openImageModal(src){ document.getElementById("fullImage").src = src; document.getElementById("imageModal").style.display = "block"; }
+  function closeImageModal(){ document.getElementById("imageModal").style.display = "none"; }
 
   async function deleteFolder(folder) {
     if (!confirm("Are you sure you want to delete '" + folder + "'?")) return;
@@ -206,21 +175,27 @@ router.get("/", async (req, res) => {
   }
 });
 
-// API: Get files in a folder
+// ✅ API: Get files in a completed folder (with public URLs)
 router.get("/:folder/files", async (req, res) => {
   const folder = req.params.folder;
   try {
     const { data, error } = await supabase.storage.from(COMPLETED_BUCKET).list(folder);
     if (error) throw error;
 
-    const files = data.filter(f => f.name !== ".completed.json").map(f => f.name);
-    res.json(files);
+    const files = data
+      .filter(f => f.name !== ".completed.json")
+      .map(f => {
+        const g = supabase.storage.from(COMPLETED_BUCKET).getPublicUrl(\`\${folder}/\${f.name}\`);
+        return { ...f, publicUrl: g?.data?.publicUrl || null };
+      });
+
+    res.json({ files });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// API: Delete folder
+// ✅ API: Delete folder
 router.delete("/:folder/delete", async (req, res) => {
   const folder = req.params.folder;
   try {
@@ -231,7 +206,7 @@ router.delete("/:folder/delete", async (req, res) => {
       return res.status(404).json({ error: "Folder not found" });
     }
 
-    const paths = data.map(f => `${folder}/${f.name}`);
+    const paths = data.map(f => \`\${folder}/\${f.name}\`);
     await supabase.storage.from(COMPLETED_BUCKET).remove(paths);
 
     res.json({ ok: true, deleted: folder });
