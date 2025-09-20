@@ -9,7 +9,6 @@ const router = express.Router();
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const EXTRACTED_BUCKET = "Extracted_Files";
 const COMPLETED_BUCKET = "Completed";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -46,12 +45,16 @@ router.get("/", async (req, res) => {
         .modal-header h2 { margin:0; font-size:1.3em; color:#1b5e20; }
         .modal-header button { background:#333; color:#fff; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; }
         .section-title { font-size:1.1em; font-weight:bold; color:#1b5e20; margin:15px 0 10px; }
-        .file-list { list-style:none; padding:0; margin:0; }
-        .file-list li { padding:8px 0; border-bottom:1px solid #eee; word-wrap:break-word; white-space:normal; }
-        .file-list a { text-decoration:none; color:#2e7d32; font-weight:500; }
+        .file-list { list-style:none; padding:0; margin:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; }
+        .file-list li { border:1px solid #eee; padding:6px; border-radius:6px; text-align:center; background:#fafafa; cursor:pointer; }
+        .file-list img { max-width:100%; height:100px; object-fit:cover; border-radius:6px; }
         .modal-footer { text-align:right; margin-top:15px; }
         .modal-footer button { background:#c62828; color:#fff; border:none; padding:8px 14px; border-radius:6px; cursor:pointer; }
         .modal-footer button:hover { background:#b71c1c; }
+
+        /* Full image preview */
+        #imagePreviewBg { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); display:none; justify-content:center; align-items:center; z-index:3000; }
+        #imagePreviewBg img { max-width:90%; max-height:90%; border-radius:12px; }
       </style>
     </head>
     <body>
@@ -111,6 +114,11 @@ router.get("/", async (req, res) => {
         </div>
       </div>
 
+      <!-- Full Image Preview -->
+      <div id="imagePreviewBg" onclick="this.style.display='none'">
+        <img id="imagePreview" src="" />
+      </div>
+
       <script>
   const menuArrow=document.getElementById("menuArrow");
   const sidebar=document.getElementById("sidebar");
@@ -137,7 +145,7 @@ router.get("/", async (req, res) => {
       sectionImages.innerHTML =
         '<div class="section-title">🖼 Images</div><ul class="file-list">' +
         imageFiles.map(f => {
-          return \`<li><a href="/supabase/\${folder}/\${f}" target="_blank">\${f}</a></li>\`;
+          return \`<li onclick="showImage('/supabase/\${folder}/\${f}')"><img src="/supabase/\${folder}/\${f}" alt="\${f}" /><div>\${f}</div></li>\`;
         }).join('') +
         '</ul>';
     } else {
@@ -148,7 +156,7 @@ router.get("/", async (req, res) => {
       sectionFiles.innerHTML =
         '<div class="section-title">📄 Files</div><ul class="file-list">' +
         otherFiles.map(f => {
-          return \`<li><a href="/supabase/\${folder}/\${f}" target="_blank">\${f}</a></li>\`;
+          return \`<li onclick="viewFile('/supabase/\${folder}/\${f}', '\${f}')">\${f}</li>\`;
         }).join('') +
         '</ul>';
     } else {
@@ -160,6 +168,26 @@ router.get("/", async (req, res) => {
   }
 
   function closeModal(){ document.getElementById("modalBg").style.display='none'; }
+
+  function showImage(src) {
+    document.getElementById("imagePreview").src = src;
+    document.getElementById("imagePreviewBg").style.display='flex';
+  }
+
+  async function viewFile(url, name) {
+    let contentHtml = "";
+    if (name.toLowerCase().endsWith(".txt") || name.toLowerCase().endsWith(".log")) {
+      const res = await fetch(url);
+      const txt = await res.text();
+      contentHtml = "<pre style='text-align:left; white-space:pre-wrap;'>" + txt + "</pre>";
+    } else if (name.toLowerCase().endsWith(".pdf")) {
+      contentHtml = "<iframe src='" + url + "' width='100%' height='500px'></iframe>";
+    } else {
+      contentHtml = "<a href='" + url + "' target='_blank'>Download " + name + "</a>";
+    }
+    document.getElementById("fileSection").innerHTML =
+      '<div class="section-title">📄 File Preview</div>' + contentHtml;
+  }
 
   async function deleteFolder(folder) {
     if (!confirm("Are you sure you want to delete '" + folder + "'?")) return;
@@ -203,7 +231,7 @@ router.delete("/:folder/delete", async (req, res) => {
       return res.status(404).json({ error: "Folder not found" });
     }
 
-    const paths = data.map(f => `${folder}/${f.name}`);
+    const paths = data.map(f => \`\${folder}/\${f.name}\`);
     await supabase.storage.from(COMPLETED_BUCKET).remove(paths);
 
     res.json({ ok: true, deleted: folder });
