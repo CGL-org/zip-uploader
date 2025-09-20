@@ -10,6 +10,7 @@ const router = express.Router();
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const EXTRACTED_BUCKET = "Extracted_Files";
+const DONE_BUCKET = "Completed_Files"; // target bucket for completed folders
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -249,7 +250,7 @@ router.get("/", async (req, res) => {
           // Bind Done button
           document.getElementById('doneBtn').onclick = async () => {
             if(confirm("Mark folder '"+folder+"' as Done?")) {
-              const res = await fetch('/done/'+folder+'/done', { method:'POST' });
+              const res = await fetch('/extracted/'+folder+'/done', { method:'POST' });
               if(res.ok){
                 alert("Folder moved to Completed.");
                 window.location.reload();
@@ -292,6 +293,38 @@ router.get("/:folder/list", async (req, res) => {
     });
 
     res.json({ files });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ✅ Move folder to Completed_Files
+router.post("/:folder/done", async (req, res) => {
+  const folder = req.params.folder;
+  try {
+    // List files inside folder
+    const { data: files, error: listErr } = await supabase.storage.from(EXTRACTED_BUCKET).list(folder);
+    if (listErr) throw listErr;
+
+    // Copy each file to DONE_BUCKET
+    for (const f of files) {
+      const sourcePath = `${folder}/${f.name}`;
+      const targetPath = `${folder}/${f.name}`;
+
+      const { error: copyErr } = await supabase.storage
+        .from(EXTRACTED_BUCKET)
+        .move(sourcePath, targetPath, { destinationBucket: DONE_BUCKET }); // Supabase JS v2 supports bucket move
+
+      if (copyErr) throw copyErr;
+    }
+
+    // Delete folder from EXTRACTED_BUCKET
+    const { error: delErr } = await supabase.storage.from(EXTRACTED_BUCKET).remove(
+      files.map(f => `${folder}/${f.name}`)
+    );
+    if (delErr) throw delErr;
+
+    res.json({ success: true, message: `Folder ${folder} moved.` });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
