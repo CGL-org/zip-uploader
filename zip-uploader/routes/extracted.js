@@ -73,18 +73,18 @@ router.get("/", async (req, res) => {
           <tbody>
             ${await Promise.all(data.map(async f => {
               let extractedAt = "N/A";
-            const { data: meta, error: metaErr } = await supabase.storage.from(EXTRACTED_BUCKET).download(`${f.name}/.extracted.json`);
+              const { data: meta, error: metaErr } = await supabase.storage.from(EXTRACTED_BUCKET).download(`${f.name}/.extracted.json`);
 
               if (!metaErr && meta) {
                 const txt = await meta.text();
                 try { extractedAt = JSON.parse(txt).extractedAt; } catch {}
               }
-              return \`
+              return `
                 <tr>
-                  <td>\${f.name}</td>
-                  <td>\${extractedAt}</td>
-                  <td><button onclick="openFolder('\${f.name}')">View</button></td>
-                </tr>\`;
+                  <td>${f.name}</td>
+                  <td>${extractedAt}</td>
+                  <td><button onclick="openFolder('${f.name}')">View</button></td>
+                </tr>`;
             })).then(rows => rows.join(""))}
           </tbody>
         </table>
@@ -202,7 +202,7 @@ router.get("/:folder/list", async (req, res) => {
     if (error) throw error;
 
     const files = data.map(f => {
-      const g = supabase.storage.from(EXTRACTED_BUCKET).getPublicUrl(\`\${folder}/\${f.name}\`);
+      const g = supabase.storage.from(EXTRACTED_BUCKET).getPublicUrl(`${folder}/${f.name}`);
       return { ...f, publicUrl: g?.data?.publicUrl || null };
     });
 
