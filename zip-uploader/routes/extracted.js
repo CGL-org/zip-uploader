@@ -153,7 +153,9 @@ router.get("/:folder/list", async (req, res) => {
   if(error) return res.status(500).json({error:error.message});
   const files = await Promise.all(
     data.filter(f=>!f.name.endsWith(".extracted.json")).map(async f=>{
-      const { data:url } = supabase.storage.from(EXTRACTED_BUCKET).getPublicUrl(\`\${folder}/\${f.name}\`);
+     const { data } = supabase.storage
+  .from(EXTRACTED_BUCKET)
+  .getPublicUrl(`${folder}/${f.name}`);
       return { name:f.name, url:url.publicUrl };
     })
   );
