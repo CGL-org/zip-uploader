@@ -181,7 +181,7 @@ router.post("/:folder/done", async (req, res) => {
 
     // Copy files to Completed
     for (const file of data) {
-      const path = \`\${folder}/\${file.name}\`;
+      const path = `${folder}/${file.name}`;
       const { data: fileData, error: dlErr } = await supabase.storage.from(EXTRACTED_BUCKET).download(path);
       if (dlErr) throw dlErr;
 
@@ -191,10 +191,11 @@ router.post("/:folder/done", async (req, res) => {
 
     // Add metadata
     const meta = { completedAt: new Date().toISOString() };
-    await supabase.storage.from(COMPLETED_BUCKET).upload(\`\${folder}/.completed.json\`, JSON.stringify(meta), { upsert: true });
+    await supabase.storage.from(COMPLETED_BUCKET).upload(`${folder}/.completed.json`, JSON.stringify(meta), { upsert: true });
+
 
     // Delete from Extracted
-    const paths = data.map(f => \`\${folder}/\${f.name}\`);
+    const paths = data.map(f => `${folder}/${f.name}`);
     await supabase.storage.from(EXTRACTED_BUCKET).remove(paths);
 
     res.json({ ok: true, moved: folder });
