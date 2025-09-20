@@ -82,7 +82,9 @@ router.get("/", async (req, res) => {
           <tbody>
             ${await Promise.all(data.map(async f => {
               let extractedAt = "N/A";
-              const { data: meta } = await supabase.storage.from(EXTRACTED_BUCKET).download(`${f.name}/.extracted.json`);
+              const { data: meta } = await supabase.storage
+              .from(DONE_BUCKET)
+              .download(`${f.name}/.completed.json`);
               if (meta) {
                 try { extractedAt = JSON.parse(await meta.text()).extractedAt; } catch {}
               }
