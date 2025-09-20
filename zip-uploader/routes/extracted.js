@@ -111,7 +111,7 @@ router.get("/", async (req, res) => {
           text-align:right; margin-top:15px;
         }
         .modal-footer button {
-          background:#b71c1c; color:#fff; border:none; padding:8px 14px;
+          background:#2e7d32; color:#fff; border:none; padding:8px 14px;
           border-radius:6px; cursor:pointer;
         }
 
@@ -137,6 +137,7 @@ router.get("/", async (req, res) => {
       <div id="sidebar" class="sidebar">
         <a href="/">🏠 Dashboard</a>
         <a href="/extracted">📂 Extracted Files</a>
+        <a href="/done">✅ Check and Complete</a>
         <a href="#">➕ Create Account</a>
         <a href="#">✏ Update Account</a>
         <a href="#">🗑 Delete Account</a>
@@ -177,7 +178,7 @@ router.get("/", async (req, res) => {
           <div id="imageSection"></div>
           <div id="fileSection"></div>
           <div class="modal-footer">
-            <button id="deleteBtn">🗑 Delete Folder</button>
+            <button id="doneBtn">✅ Done</button>
           </div>
         </div>
       </div>
@@ -245,15 +246,15 @@ router.get("/", async (req, res) => {
 
           document.getElementById('modalBg').style.display='flex';
 
-          // Bind delete button
-          document.getElementById('deleteBtn').onclick = async () => {
-            if(confirm("Are you sure you want to delete folder '"+folder+"'?")) {
-              const del = await fetch('/extracted/'+folder+'/delete', { method:'DELETE' });
-              if(del.ok){
-                alert("Folder deleted.");
+          // Bind Done button
+          document.getElementById('doneBtn').onclick = async () => {
+            if(confirm("Mark folder '"+folder+"' as Done?")) {
+              const res = await fetch('/done/'+folder+'/done', { method:'POST' });
+              if(res.ok){
+                alert("Folder moved to Completed.");
                 window.location.reload();
               } else {
-                alert("Error deleting folder.");
+                alert("Error moving folder.");
               }
             }
           }
@@ -291,25 +292,6 @@ router.get("/:folder/list", async (req, res) => {
     });
 
     res.json({ files });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Delete folder and its files
-router.delete("/:folder/delete", async (req, res) => {
-  const folder = req.params.folder;
-  try {
-    const { data, error } = await supabase.storage.from(EXTRACTED_BUCKET).list(folder);
-    if (error) throw error;
-
-    const paths = data.map(f => `${folder}/${f.name}`);
-    if (paths.length > 0) {
-      const { error: delErr } = await supabase.storage.from(EXTRACTED_BUCKET).remove(paths);
-      if (delErr) throw delErr;
-    }
-
-    res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
