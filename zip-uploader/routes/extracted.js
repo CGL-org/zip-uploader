@@ -161,7 +161,7 @@ router.post("/:folder/done", async (req,res)=>{
     const {data:files,error:listErr}=await supabase.storage.from(EXTRACTED_BUCKET).list(folder);
     if(listErr) throw listErr;
     for(const f of files){
-      const path=\`\${folder}/\${f.name}\`;
+      const path = "${folder}/" + f.name;
       const {data:fileData,error:dlErr}=await supabase.storage.from(EXTRACTED_BUCKET).download(path);
       if(dlErr) throw dlErr;
       await supabase.storage.from(DONE_BUCKET).upload(path,fileData,{upsert:true});
