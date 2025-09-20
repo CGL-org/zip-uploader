@@ -103,6 +103,7 @@ router.get("/", async (req, res) => {
             <h2 id="modalTitle"></h2>
             <button onclick="closeModal()">✖ Close</button>
           </div>
+          <div id="imageSection"></div>
           <div id="fileSection"></div>
           <div class="modal-footer">
             <button id="deleteBtn">🗑 Delete Folder</button>
@@ -124,11 +125,29 @@ router.get("/", async (req, res) => {
           document.getElementById("modalTitle").innerText = "Folder: " + folder;
           const res = await fetch('/done/' + folder + '/files');
           const files = await res.json();
-          const section = document.getElementById("fileSection");
+const sectionImages = document.getElementById("imageSection");
+const sectionFiles = document.getElementById("fileSection");
 
-          if(files.length > 0){
-            section.innerHTML = '<div class="section-title">📄 Files</div><ul class="file-list">' + files.map(f => '<li>' + f + '</li>').join('') + '</ul>';
-          } else { section.innerHTML = "<p>No files found.</p>"; }
+const imageExts = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
+const imageFiles = files.filter(f => imageExts.some(ext => f.toLowerCase().endsWith(ext)));
+const otherFiles = files.filter(f => !imageExts.some(ext => f.toLowerCase().endsWith(ext)));
+
+if (imageFiles.length > 0) {
+  sectionImages.innerHTML = '<div class="section-title">🖼 Images</div><ul class="file-list">' +
+    imageFiles.map(f => `<li><a href="/supabase/${folder}/${f}" target="_blank">${f}</a></li>`).join('') +
+    '</ul>';
+} else {
+  sectionImages.innerHTML = "";
+}
+
+if (otherFiles.length > 0) {
+  sectionFiles.innerHTML = '<div class="section-title">📄 Files</div><ul class="file-list">' +
+    otherFiles.map(f => `<li><a href="/supabase/${folder}/${f}" target="_blank">${f}</a></li>`).join('') +
+    '</ul>';
+} else {
+  sectionFiles.innerHTML = "<p>No files found.</p>";
+}
+
 
           document.getElementById("deleteBtn").onclick = () => deleteFolder(folder);
           document.getElementById("modalBg").style.display='flex';
