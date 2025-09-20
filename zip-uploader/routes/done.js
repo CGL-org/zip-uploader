@@ -71,25 +71,28 @@ router.get("/", async (req, res) => {
         <h2>Completed Folders</h2>
         <table>
           <thead><tr><th>Folder</th><th>Completed At</th><th>Action</th></tr></thead>
-          <tbody>
-            ${await Promise.all(data.map(async f => {
-              let completedAt = "N/A";
+<tbody>
+  ${await Promise.all(data.map(async f => {
+    let completedAt = "N/A";
 
-const { data: meta } = await supabase.storage
-  .from(COMPLETED_BUCKET)
-  .download(`${f.name}/.completed.json`);
-              
-              if (meta) {
-                const txt = await meta.text();
-                try { completedAt = JSON.parse(txt).completedAt; } catch {}
-              }
-              return \`<tr>
-                        <td>\${f.name}</td>
-                        <td>\${completedAt}</td>
-                        <td><button onclick="viewFolder('\${f.name}')">View</button></td>
-                      </tr>\`;
-            })).then(rows => rows.join(""))}
-          </tbody>
+    const { data: meta } = await supabase.storage
+      .from(COMPLETED_BUCKET)
+      .download(`${f.name}/.completed.json`);
+
+    if (meta) {
+      const txt = await meta.text();
+      try { completedAt = JSON.parse(txt).completedAt; } catch {}
+    }
+
+    return `
+      <tr>
+        <td>${f.name}</td>
+        <td>${completedAt}</td>
+        <td><button onclick="viewFolder('${f.name}')">View</button></td>
+      </tr>
+    `;
+  })).then(rows => rows.join(""))}
+</tbody>
         </table>
       </div>
 
