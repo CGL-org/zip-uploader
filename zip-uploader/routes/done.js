@@ -206,7 +206,7 @@ router.delete("/:folder/delete", async (req, res) => {
       return res.status(404).json({ error: "Folder not found" });
     }
 
-    const paths = data.map(f => \`\${folder}/\${f.name}\`);
+    const paths = data.map(f => `${folder}/${f.name}`);
     await supabase.storage.from(COMPLETED_BUCKET).remove(paths);
 
     res.json({ ok: true, deleted: folder });
