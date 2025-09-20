@@ -185,7 +185,7 @@ router.get("/:folder/files", async (req, res) => {
     const files = data
       .filter(f => f.name !== ".completed.json")
       .map(f => {
-        const g = supabase.storage.from(COMPLETED_BUCKET).getPublicUrl(\`\${folder}/\${f.name}\`);
+        const g = supabase.storage.from(COMPLETED_BUCKET).getPublicUrl(`${folder}/${f.name}`);
         return { ...f, publicUrl: g?.data?.publicUrl || null };
       });
 
