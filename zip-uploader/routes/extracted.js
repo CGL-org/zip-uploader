@@ -10,7 +10,7 @@ const router = express.Router();
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const EXTRACTED_BUCKET = "Extracted_Files";
-const DONE_BUCKET = "Completed_Files"; // target bucket for completed folders
+const DONE_BUCKET = "Completed"; // target bucket for completed folders
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
