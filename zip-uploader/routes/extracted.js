@@ -73,7 +73,8 @@ router.get("/", async (req, res) => {
           <tbody>
             ${await Promise.all(data.map(async f => {
               let extractedAt = "N/A";
-              const { data: meta, error: metaErr } = await supabase.storage.from(EXTRACTED_BUCKET).download(\`\${f.name}/.extracted.json\`);
+            const { data: meta, error: metaErr } = await supabase.storage.from(EXTRACTED_BUCKET).download(`${f.name}/.extracted.json`);
+
               if (!metaErr && meta) {
                 const txt = await meta.text();
                 try { extractedAt = JSON.parse(txt).extractedAt; } catch {}
