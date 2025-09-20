@@ -155,21 +155,41 @@ router.get("/:folder/list", async (req,res)=>{
 });
 
 // mark done
-router.post("/:folder/done", async (req,res)=>{
-  const folder=req.params.folder;
-  try{
-    const {data:files,error:listErr}=await supabase.storage.from(EXTRACTED_BUCKET).list(folder);
-    if(listErr) throw listErr;
-    for(const f of files){
-      const path = "${folder}/" + f.name;
-      const {data:fileData,error:dlErr}=await supabase.storage.from(EXTRACTED_BUCKET).download(path);
-      if(dlErr) throw dlErr;
-      await supabase.storage.from(DONE_BUCKET).upload(path,fileData,{upsert:true});
+router.post("/:folder/done", async (req, res) => {
+  const folder = req.params.folder;
+  try {
+    const { data: files, error: listErr } = await supabase.storage
+      .from(EXTRACTED_BUCKET)
+      .list(folder);
+
+    if (listErr) throw listErr;
+
+    for (const f of files) {
+      const path = `${folder}/${f.name}`; // ✅ safe template literal
+      const { data: fileData, error: dlErr } = await supabase.storage
+        .from(EXTRACTED_BUCKET)
+        .download(path);
+
+      if (dlErr) throw dlErr;
+
+      await supabase.storage.from(DONE_BUCKET).upload(path, fileData, { upsert: true });
     }
-    await supabase.storage.from(DONE_BUCKET).upload(\`\${folder}/.completed.json\`,JSON.stringify({completedAt:new Date().toISOString()}),{upsert:true});
-    await supabase.storage.from(EXTRACTED_BUCKET).remove(files.map(f=>\`\${folder}/\${f.name}\`));
-    res.json({ok:true});
-  }catch(err){res.status(500).json({error:err.message});}
+
+    // ✅ Correct — proper template literal
+    await supabase.storage
+      .from(DONE_BUCKET)
+      .upload(`${folder}/.completed.json`, JSON.stringify({ completedAt: new Date().toISOString() }), { upsert: true });
+
+    // ✅ Correct — map with template literal
+    await supabase.storage
+      .from(EXTRACTED_BUCKET)
+      .remove(files.map(f => `${folder}/${f.name}`));
+
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
+
 
 export default router;
