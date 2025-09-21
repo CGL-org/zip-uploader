@@ -152,7 +152,7 @@ app.get("/", requireLogin, async (req, res) => {
 
         /* Menu Button */
         #menuBtn {
-          position:fixed; top:15px; left:15px; background:#004d40;
+          position:fixed; top:15px; left:15px; background:#00796b;
           color:white; border:none; padding:10px 14px; cursor:pointer;
           border-radius:6px; font-size:1em; z-index:1000;
         }
@@ -162,12 +162,22 @@ app.get("/", requireLogin, async (req, res) => {
         .active + .content { margin-left:220px; }
 
         /* Table */
-        table { width:100%; border-collapse:collapse; background:white;
-          box-shadow:0 2px 8px rgba(0,0,0,0.1); border-radius:8px; overflow:hidden; }
+           table { width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-top:20px; }
         thead { background:#009688; color:white; }
-        th, td { padding:12px; border-bottom:1px solid #ddd; text-align:center; }
+        th, td { padding:12px; border-bottom:1px solid #ddd; text-align:center; word-break:break-word; }
         tbody tr:nth-child(even) { background:#f9f9f9; }
-        tbody tr:hover { background:#e0f2f1; }
+        button { background:#009688; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; }
+        button:hover { background:#00796b; }
+      
+            /* Responsive table */
+    @media(max-width:768px){
+      table, thead, tbody, th, td, tr { display:block; width:100%; }
+      thead { display:none; }
+      tr { margin-bottom:15px; background:white; border-radius:6px; padding:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+      td { text-align:right; padding-left:50%; position:relative; }
+      td::before { content:attr(data-label); position:absolute; left:10px; width:45%; font-weight:bold; text-align:left; }
+    }
+        
       </style>
     </head>
     <body>
