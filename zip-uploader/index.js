@@ -218,18 +218,16 @@ app.get("/", requireLogin, async (req, res) => {
         </table>
       </div>
 
-      <script>
-        const menuBtn=document.getElementById("menuBtn");
-        const sidebar=document.getElementById("sidebar");
-        const content=document.getElementById("mainContent");
-
+        <script>
+        const menuBtn = document.getElementById("menuBtn");
+        const sidebar = document.getElementById("sidebar");
+        const content = document.getElementById("mainContent");
+        
         menuBtn.addEventListener("click", () => {
-          sidebar.classList.toggle("active");       // show/hide sidebar
-          content.classList.toggle("shifted");      // shift content/table
+          sidebar.classList.toggle("active");   // toggle sidebar
+          content.classList.toggle("shifted");  // shift content
         });
-          
-        });
-      </script>
+        </script>
     </body>
     </html>
     `);
