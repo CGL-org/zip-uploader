@@ -158,7 +158,7 @@ app.get("/", requireLogin, async (req, res) => {
         #menuBtn {
           position:fixed; top:15px; left:15px; background:#00796b;
           color:white; border:none; padding:10px 14px; cursor:pointer;
-          border-radius:6px; font-size:1em; z-index:1000;
+          border-radius:6px; font-size:1em; z-index:2000;
         }
 
         /* Content */
