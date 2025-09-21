@@ -190,7 +190,7 @@ app.get("/", requireLogin, async (req, res) => {
       <div id="sidebar" class="sidebar">
         <a href="/">🏠 Dashboard</a>
         <a href="/extracted">📂 Extracted Files</a>
-        <a href="/done">✅ Completed</a>
+        <a href="/done">✅ Check and Completed</a>
         <a href="#">➕ Create Account</a>
         <a href="#">✏ Update Account</a>
         <a href="#">🗑 Delete Account</a>
