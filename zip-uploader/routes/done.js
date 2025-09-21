@@ -149,11 +149,11 @@ router.get("/", async (req, res) => {
       const images = data.files.filter(f=>imageExts.some(ext=>f.name.toLowerCase().endsWith(ext)));
       const others = data.files.filter(f=>!imageExts.some(ext=>f.name.toLowerCase().endsWith(ext)));
 
-      document.getElementById('imageSection').innerHTML = images.length
-      ? '<div class="section-title">🖼 Images</div><div class="image-grid">' +
-        images.map(f => `<img src="${f.publicUrl}" alt="${f.name}" onclick="openImageModal(&quot;${f.publicUrl}&quot;)">`).join('') +
-        '</div>'
-      : '';
+document.getElementById('imageSection').innerHTML = images.length
+  ? '<div class="section-title">🖼 Images</div><div class="image-grid">' +
+    images.map(f => `<img src="${f.publicUrl}" alt="${f.name}" onclick="openImageModal('${f.publicUrl.replace(/'/g, "\\'")}')">`).join('') +
+    '</div>'
+  : '';
 
       document.getElementById('fileSection').innerHTML = others.length ? '<div class="section-title">📄 Files</div><ul class="file-list">'+others.map(f=>`<li><a href="${f.publicUrl}" target="_blank">${f.name}</a></li>`).join('')+'</ul>':'';
 
