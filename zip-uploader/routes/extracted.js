@@ -85,12 +85,12 @@ router.get("/", async (req, res) => {
               if (meta) {
                 try { extractedAt = JSON.parse(await meta.text()).extractedAt; } catch {}
               }
-              return \`
+              return `
               <tr>
                 <td data-label="Folder">\${f.name}</td>
                 <td data-label="Date Extracted">\${extractedAt}</td>
                 <td data-label="Action"><button onclick="openFolder('\${f.name}')">View</button></td>
-              </tr>\`;
+              </tr>`;
             })).then(rows => rows.join(""))}
           </tbody>
         </table>
