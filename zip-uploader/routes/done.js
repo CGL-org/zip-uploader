@@ -19,28 +19,33 @@ router.get("/", async (req, res) => {
     if (error) throw error;
 
     res.send(`
-    <html>
+        <html>
     <head>
       <title>Completed Files</title>
       <style>
         body { margin:0; font-family: Arial, sans-serif; background:#f4f6f9; }
-        header { background:#004d40; color:white; padding:15px; text-align:center; font-size:1.5em; position:relative; }
-        #menuBtn { position:absolute; left:15px; top:15px; background:#00796b; color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; font-size:1em; }
-        
-        .sidebar { position:fixed; top:0; left:-240px; width:220px; height:100%; background:#004d40; color:white; padding-top:60px; transition:0.3s; z-index:1000; }
-        .sidebar.active { left:0; }
-        .sidebar a { display:block; padding:12px 18px; color:white; text-decoration:none; font-weight:500; }
-        .sidebar a:hover { background:#00796b; }
+        header { background:#004d40; color:white; padding:15px; text-align:center; font-size:1.5em; position:sticky; top:0; z-index:100; box-shadow:0 2px 4px rgba(0,0,0,0.1);}
+        #menuBtn { position:absolute; left:15px; top:15px; background:#00796b; color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; font-size:1em; box-shadow:0 2px 4px rgba(0,0,0,0.2); }
 
-        .content { padding:20px; margin-top:20px; }
-        table { width:100%; border-collapse:collapse; background:white; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+        /* Sidebar */
+        .sidebar { position:fixed; top:0; left:-240px; width:220px; height:100%; background:#004d40; color:white; padding-top:60px; transition:0.3s; z-index:1000; box-shadow:2px 0 6px rgba(0,0,0,0.2);}
+        .sidebar.active { left:0; }
+        .sidebar a { display:block; padding:12px 18px; color:white; text-decoration:none; font-weight:500; transition:0.2s;}
+        .sidebar a:hover { background:#00796b; padding-left:25px; }
+
+        /* Content */
+        .content { padding:20px; transition: margin-left 0.3s; margin-left:0; }
+        .content.active { margin-left:220px; }
+
+        /* Table */
+        table { width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-top:20px; }
         thead { background:#009688; color:white; }
-        th, td { padding:12px; border-bottom:1px solid #ddd; text-align:center; }
+        th, td { padding:12px; border-bottom:1px solid #ddd; text-align:center; word-break:break-word; }
         tbody tr:nth-child(even) { background:#f9f9f9; }
-        button { background:#009688; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; }
+        button { background:#009688; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; }
         button:hover { background:#00796b; }
 
-        /* Responsive table */
+        /* Responsive Table */
         @media(max-width:768px){
           table, thead, tbody, th, td, tr { display:block; width:100%; }
           thead { display:none; }
@@ -85,26 +90,21 @@ router.get("/", async (req, res) => {
         <a href="/logout">🚪 Logout</a>
       </div>
 
-      <div class="content">
+      <div class="content" id="mainContent">
         <h2>Completed Folders</h2>
         <table>
           <thead><tr><th>Folder</th><th>Date Completed</th><th>Action</th></tr></thead>
           <tbody>
             ${await Promise.all(data.map(async f => {
               let completedAt = "N/A";
-              const { data: meta } = await supabase.storage
-                .from(DONE_BUCKET)
-                .download(`${f.name}/.completed.json`);
-              if (meta) {
-                const txt = await meta.text();
-                try { completedAt = JSON.parse(txt).completedAt; } catch {}
-              }
-              return `
+              const { data: meta } = await supabase.storage.from(DONE_BUCKET).download(`${f.name}/.completed.json`);
+              if(meta){ try { completedAt = JSON.parse(await meta.text()).completedAt; } catch{} }
+              return \`
                 <tr>
-                  <td data-label="Folder">${f.name}</td>
-                  <td data-label="Date Completed">${completedAt}</td>
-                  <td data-label="Action"><button onclick="openFolder('${f.name}')">View</button></td>
-                </tr>`;
+                  <td data-label="Folder">\${f.name}</td>
+                  <td data-label="Date Completed">\${completedAt}</td>
+                  <td data-label="Action"><button onclick="openFolder('\${f.name}')">View</button></td>
+                </tr>\`;
             })).then(rows => rows.join(""))}
           </tbody>
         </table>
@@ -127,14 +127,19 @@ router.get("/", async (req, res) => {
       <div id="imageModal"><span onclick="closeImageModal()">&times;</span><img id="fullImage"></div>
 
       <script>
-        const menuBtn=document.getElementById("menuBtn");
-        const sidebar=document.getElementById("sidebar");
-        menuBtn.addEventListener("click",()=> sidebar.classList.toggle("active"));
+        const menuBtn = document.getElementById("menuBtn");
+        const sidebar = document.getElementById("sidebar");
+        const content = document.getElementById("mainContent");
+
+        menuBtn.addEventListener("click", () => {
+          sidebar.classList.toggle("active");
+          content.classList.toggle("active");
+        });
 
         let currentFolder = null;
-        async function openFolder(folder) {
+        async function openFolder(folder){
           currentFolder = folder;
-          const res = await fetch('/done/'+folder+'/list');
+          const res = await fetch('/done/' + folder + '/list');
           const data = await res.json();
           document.getElementById('folderTitle').innerText = folder;
 
@@ -142,27 +147,22 @@ router.get("/", async (req, res) => {
           const images = data.files.filter(f => imageExts.some(ext => f.name.toLowerCase().endsWith(ext)));
           const others = data.files.filter(f => !imageExts.some(ext => f.name.toLowerCase().endsWith(ext)));
 
-          if(images.length > 0){
-            document.getElementById('imageSection').innerHTML = '<div class="section-title">🖼 Images</div><div class="image-grid">' + images.map(f => '<img src="'+f.publicUrl+'" alt="'+f.name+'" onclick="openImageModal(\\''+f.publicUrl+'\\')">').join('') + '</div>';
-          } else { document.getElementById('imageSection').innerHTML = ""; }
-
-          if(others.length > 0){
-            document.getElementById('fileSection').innerHTML = '<div class="section-title">📄 Files</div><ul class="file-list">' + others.map(f => '<li><a href="'+f.publicUrl+'" target="_blank">'+f.name+'</a></li>').join('') + '</ul>';
-          } else { document.getElementById('fileSection').innerHTML = ""; }
+          document.getElementById('imageSection').innerHTML = images.length ? '<div class="section-title">🖼 Images</div><div class="image-grid">' + images.map(f => '<img src="'+f.publicUrl+'" alt="'+f.name+'" onclick="openImageModal(\\''+f.publicUrl+'\\')">').join('') + '</div>' : '';
+          document.getElementById('fileSection').innerHTML = others.length ? '<div class="section-title">📄 Files</div><ul class="file-list">' + others.map(f => '<li><a href="'+f.publicUrl+'" target="_blank">'+f.name+'</a></li>').join('') + '</ul>' : '';
 
           document.getElementById('modalBg').style.display='flex';
-
           document.getElementById('deleteBtn').onclick = async () => {
-            if(confirm("Delete folder '"+folder+"'?")) {
-              const res = await fetch('/done/'+folder+'/delete', { method:'DELETE' });
+            if(confirm("Delete folder '"+folder+"'?")){
+              const res = await fetch('/done/'+folder+'/delete',{ method:'DELETE' });
               if(res.ok){ alert("Folder deleted."); window.location.reload(); }
               else { alert("Error deleting folder."); }
             }
           }
         }
+
         function closeModal(){ document.getElementById('modalBg').style.display='none'; }
-        function openImageModal(src){ document.getElementById("fullImage").src = src; document.getElementById("imageModal").style.display = "block"; }
-        function closeImageModal(){ document.getElementById("imageModal").style.display = "none"; }
+        function openImageModal(src){ document.getElementById("fullImage").src = src; document.getElementById("imageModal").style.display="block"; }
+        function closeImageModal(){ document.getElementById("imageModal").style.display="none"; }
       </script>
     </body>
     </html>
