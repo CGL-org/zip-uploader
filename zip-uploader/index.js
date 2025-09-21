@@ -143,7 +143,11 @@ app.get("/", requireLogin, async (req, res) => {
           position:fixed; top:0; left:-240px; width:220px; height:100%;
           background:#004d40; color:white; padding-top:60px; transition:0.3s;
           box-shadow:2px 0 6px rgba(0,0,0,0.2);
+          z-index: 1000;
         }
+        
+        .sidebar.active { left: 0; }
+        
         .sidebar a {
           display:block; padding:14px 18px; color:white; text-decoration:none;
           font-weight:500; transition:0.2s;
@@ -159,8 +163,8 @@ app.get("/", requireLogin, async (req, res) => {
 
         /* Content */
         .content { padding:20px; margin-left:0; transition:margin-left 0.3s; }
-        .active + .content { margin-left:220px; }
-
+        .content.shifted { margin-left: 220px; }
+        
         /* Table */
            table { width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-top:20px; }
         thead { background:#009688; color:white; }
@@ -219,12 +223,10 @@ app.get("/", requireLogin, async (req, res) => {
         const sidebar=document.getElementById("sidebar");
         const content=document.getElementById("mainContent");
 
-          menuBtn.addEventListener("click",()=> {
-          if(sidebar.style.left==="0px"){ 
-            sidebar.style.left="-240px"; content.classList.remove("active");
-          } else {
-            sidebar.style.left="0"; content.classList.add("active");
-          }
+        menuBtn.addEventListener("click", () => {
+          sidebar.classList.toggle("active");       // show/hide sidebar
+          content.classList.toggle("shifted");      // shift content/table
+        });
           
         });
       </script>
