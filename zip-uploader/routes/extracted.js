@@ -81,7 +81,7 @@ router.get("/", async (req, res) => {
               let extractedAt = "N/A";
               const { data: meta } = await supabase.storage
               .from(DONE_BUCKET)
-              .download(\`\${f.name}/.completed.json\`);
+              .download(`${f.name}/.completed.json`);
               if (meta) {
                 try { extractedAt = JSON.parse(await meta.text()).extractedAt; } catch {}
               }
