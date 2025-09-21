@@ -9,11 +9,11 @@ const router = express.Router();
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const EXTRACTED_BUCKET = "Extracted_Files";
-const DONE_BUCKET = "Completed";
+const DONE_BUCKET = "Completed"; 
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// 📂 Extracted Files page
+// 📂 Extracted files page
 router.get("/", async (req, res) => {
   try {
     const { data, error } = await supabase.storage.from(EXTRACTED_BUCKET).list("");
@@ -31,13 +31,14 @@ router.get("/", async (req, res) => {
         .sidebar a:hover { background:#00796b; }
         #menuBtn { position:fixed; top:15px; left:15px; background:#004d40; color:white; padding:10px 14px; border-radius:6px; cursor:pointer; z-index:1000; }
         .content { padding:80px 20px 20px 20px; }
-        h2 { color:#004d40; }
         table { width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
         thead { background:#009688; color:white; }
         th, td { padding:12px; border-bottom:1px solid #ddd; text-align:center; }
         tbody tr:nth-child(even) { background:#f9f9f9; }
         button { background:#009688; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; }
         button:hover { background:#00796b; }
+
+        /* Responsive */
         @media(max-width:768px){
           table, thead, tbody, th, td, tr { display:block; }
           tr { margin-bottom:15px; }
@@ -45,6 +46,8 @@ router.get("/", async (req, res) => {
           td::before { content:attr(data-label); position:absolute; left:10px; font-weight:bold; }
           th { display:none; }
         }
+
+        /* Modal */
         .modal-bg { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:none; justify-content:center; align-items:center; z-index:2000; }
         .modal { background:#fff; padding:20px; border-radius:12px; max-width:900px; width:90%; max-height:85vh; overflow-y:auto; }
         .modal-header { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd; padding-bottom:10px; }
@@ -87,9 +90,9 @@ router.get("/", async (req, res) => {
               }
               return `
               <tr>
-                <td data-label="Folder">\${f.name}</td>
-                <td data-label="Date Extracted">\${extractedAt}</td>
-                <td data-label="Action"><button onclick="openFolder('\${f.name}')">View</button></td>
+                <td data-label="Folder">${f.name}</td>
+                <td data-label="Date Extracted">${extractedAt}</td>
+                <td data-label="Action"><button onclick="openFolder('${f.name}')">View</button></td>
               </tr>`;
             })).then(rows => rows.join(""))}
           </tbody>
@@ -113,7 +116,7 @@ router.get("/", async (req, res) => {
       <script>
         const menuBtn=document.getElementById("menuBtn"), sidebar=document.getElementById("sidebar");
         menuBtn.addEventListener("click",()=>{ sidebar.style.left = sidebar.style.left==="0px"?"-240px":"0"; });
-
+        
         let currentFolder=null;
         async function openFolder(folder){
           currentFolder=folder;
@@ -146,7 +149,7 @@ router.get("/:folder/list", async (req,res)=>{
     const {data,error}=await supabase.storage.from(EXTRACTED_BUCKET).list(folder);
     if(error) throw error;
     const files=data.map(f=>{
-      const g=supabase.storage.from(EXTRACTED_BUCKET).getPublicUrl(`${folder}/\${f.name}`);
+      const g=supabase.storage.from(EXTRACTED_BUCKET).getPublicUrl(`${folder}/${f.name}`);
       return {...f,publicUrl:g?.data?.publicUrl||null};
     });
     res.json({files});
@@ -157,25 +160,38 @@ router.get("/:folder/list", async (req,res)=>{
 router.post("/:folder/done", async (req, res) => {
   const folder = req.params.folder;
   try {
-    const { data: files, error: listErr } = await supabase.storage.from(EXTRACTED_BUCKET).list(folder);
+    const { data: files, error: listErr } = await supabase.storage
+      .from(EXTRACTED_BUCKET)
+      .list(folder);
+
     if (listErr) throw listErr;
 
     for (const f of files) {
-      const path = \`\${folder}/\${f.name}\`;
-      const { data: fileData, error: dlErr } = await supabase.storage.from(EXTRACTED_BUCKET).download(path);
+      const path = `${folder}/${f.name}`; // ✅ safe template literal
+      const { data: fileData, error: dlErr } = await supabase.storage
+        .from(EXTRACTED_BUCKET)
+        .download(path);
+
       if (dlErr) throw dlErr;
+
       await supabase.storage.from(DONE_BUCKET).upload(path, fileData, { upsert: true });
     }
 
-    await supabase.storage.from(DONE_BUCKET).upload(\`\${folder}/.completed.json\`,
-      JSON.stringify({ completedAt: new Date().toISOString() }), { upsert: true });
+    // ✅ Correct — proper template literal
+    await supabase.storage
+      .from(DONE_BUCKET)
+      .upload(`${folder}/.completed.json`, JSON.stringify({ completedAt: new Date().toISOString() }), { upsert: true });
 
-    await supabase.storage.from(EXTRACTED_BUCKET).remove(files.map(f => \`\${folder}/\${f.name}\`));
+    // ✅ Correct — map with template literal
+    await supabase.storage
+      .from(EXTRACTED_BUCKET)
+      .remove(files.map(f => `${folder}/${f.name}`));
 
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 export default router;
