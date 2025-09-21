@@ -27,14 +27,23 @@ router.get("/", async (req, res) => {
         body { margin:0; font-family: Arial, sans-serif; background:#f4f6f9; }
         header { background:#004d40; color:white; padding:15px; text-align:center; font-size:1.5em; position:sticky; top:0; z-index:100; }
        
-        .content { padding:80px 20px 20px 20px; transition: margin-left 0.3s; }
+        .content { transition: margin-left 0.3s; }
         .content.active { margin-left:220px; }
         .content { transition: margin-left 0.3s; }
         
-        .sidebar a { display:block; padding:12px 18px; color:white; text-decoration:none; font-weight:500; }
-        .sidebar a:hover { background:#00796b; }
-        #menuBtn { position:fixed; top:15px; left:15px; background:#004d40; color:white; padding:10px 14px; border-radius:6px; cursor:pointer; z-index:1000; }
-        .content { padding:80px 20px 20px 20px; }
+        .sidebar {
+        position: fixed; top: 0; left: -240px; width: 220px; height: 100%;
+        background: #004d40; color: white; padding-top: 60px; transition: 0.3s;
+        box-shadow: 2px 0 6px rgba(0,0,0,0.2); z-index: 999;
+      }
+.sidebar a { display:block; padding:14px 18px; color:white; text-decoration:none; font-weight:500; transition:0.2s; }
+.sidebar a:hover { background:#00796b; padding-left:25px; }
+        #menuBtn {
+  position: fixed; top: 15px; left: 15px; background:#004d40;
+  color:white; border:none; padding:10px 14px; border-radius:6px;
+  cursor:pointer; font-size:1em; z-index:1000;
+}
+        
         
         
         table { width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
@@ -70,40 +79,40 @@ router.get("/", async (req, res) => {
     </head>
     <body>
       <header>📂 Extracted Files</header>
-      <div id="menuBtn">☰</div>
-      <div id="sidebar" class="sidebar">
-        <a href="/">🏠 Dashboard</a>
-        <a href="/extracted">📂 Extracted Files</a>
-        <a href="/done">✅ Check and Complete</a>
-        <a href="#">➕ Create Account</a>
-        <a href="#">✏ Update Account</a>
-        <a href="#">🗑 Delete Account</a>
-        <a href="/logout">🚪 Logout</a>
-      </div>
+        <div id="menuBtn">☰ Menu</div>
+        <div id="sidebar" class="sidebar">
+          <a href="/">🏠 Dashboard</a>
+          <a href="/extracted">📂 Extracted Files</a>
+          <a href="/done">✅ Check and Complete</a>
+          <a href="#">➕ Create Account</a>
+          <a href="#">✏ Update Account</a>
+          <a href="#">🗑 Delete Account</a>
+          <a href="/logout">🚪 Logout</a>
+        </div>
 
-      <div class="content" id="mainContent">>
-        <h2>Available Folders</h2>
-        <table>
-          <thead><tr><th>Folder</th><th>Date Extracted</th><th>Action</th></tr></thead>
-          <tbody>
-            ${await Promise.all(data.map(async f => {
-              let extractedAt = "N/A";
-              const { data: meta } = await supabase.storage
-              .from(DONE_BUCKET)
-              .download(`${f.name}/.completed.json`);
-              if (meta) {
-                try { extractedAt = JSON.parse(await meta.text()).extractedAt; } catch {}
-              }
-              return `
-              <tr>
-                <td data-label="Folder">${f.name}</td>
-                <td data-label="Date Extracted">${extractedAt}</td>
-                <td data-label="Action"><button onclick="openFolder('${f.name}')">View</button></td>
-              </tr>`;
-            })).then(rows => rows.join(""))}
-          </tbody>
-        </table>
-      </div>
+<div class="content" id="mainContent">
+  <h2>Available Folders</h2>
+  <table>
+    <thead><tr><th>Folder</th><th>Date Extracted</th><th>Action</th></tr></thead>
+    <tbody>
+      ${await Promise.all(data.map(async f => {
+        let extractedAt = "N/A";
+        const { data: meta } = await supabase.storage
+          .from(DONE_BUCKET)
+          .download(`${f.name}/.completed.json`);
+        if (meta) {
+          try { extractedAt = JSON.parse(await meta.text()).extractedAt; } catch {}
+        }
+        return `
+        <tr>
+          <td data-label="Folder">${f.name}</td>
+          <td data-label="Date Extracted">${extractedAt}</td>
+          <td data-label="Action"><button onclick="openFolder('${f.name}')">View</button></td>
+        </tr>`;
+      })).then(rows => rows.join(""))}
+    </tbody>
+  </table>
+</div>
 
       <div class="modal-bg" id="modalBg">
         <div class="modal">
@@ -120,17 +129,19 @@ router.get("/", async (req, res) => {
       </div>
 
       <script>
-        const menuBtn=document.getElementById("menuBtn");
-        const sidebar=document.getElementById("sidebar");
-        const content=document.getElementById("mainContent");
-        
-        menuBtn.addEventListener("click",()=> {
-          if(sidebar.style.left==="0px"){ 
-            sidebar.style.left="-240px"; content.classList.remove("active");
-          } else {
-            sidebar.style.left="0"; content.classList.add("active");
-          }
-        });
+      const menuBtn = document.getElementById("menuBtn");
+      const sidebar = document.getElementById("sidebar");
+      const content = document.getElementById("mainContent");
+      
+      menuBtn.addEventListener("click", () => {
+        if (sidebar.style.left === "0px") {
+          sidebar.style.left = "-240px";
+          content.classList.remove("active");
+        } else {
+          sidebar.style.left = "0";
+          content.classList.add("active");
+        }
+      });
         
         let currentFolder=null;
         async function openFolder(folder){
