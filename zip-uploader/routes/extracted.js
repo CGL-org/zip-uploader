@@ -146,7 +146,7 @@ router.get("/:folder/list", async (req,res)=>{
     const {data,error}=await supabase.storage.from(EXTRACTED_BUCKET).list(folder);
     if(error) throw error;
     const files=data.map(f=>{
-      const g=supabase.storage.from(EXTRACTED_BUCKET).getPublicUrl(\`\${folder}/\${f.name}\`);
+      const g=supabase.storage.from(EXTRACTED_BUCKET).getPublicUrl(`${folder}/\${f.name}`);
       return {...f,publicUrl:g?.data?.publicUrl||null};
     });
     res.json({files});
