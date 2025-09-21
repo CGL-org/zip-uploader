@@ -219,10 +219,12 @@ app.get("/", requireLogin, async (req, res) => {
         const sidebar=document.getElementById("sidebar");
         const content=document.getElementById("mainContent");
 
-          menuBtn.addEventListener("click", () => {
-          sidebar.classList.toggle("active");
-          content.classList.toggle("active");
-        });
+          menuBtn.addEventListener("click",()=> {
+          if(sidebar.style.left==="0px"){ 
+            sidebar.style.left="-240px"; content.classList.remove("active");
+          } else {
+            sidebar.style.left="0"; content.classList.add("active");
+          }
           
         });
       </script>
