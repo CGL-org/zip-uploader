@@ -26,11 +26,17 @@ router.get("/", async (req, res) => {
       <style>
         body { margin:0; font-family: Arial, sans-serif; background:#f4f6f9; }
         header { background:#004d40; color:white; padding:15px; text-align:center; font-size:1.5em; position:sticky; top:0; z-index:100; }
-        .sidebar { position:fixed; top:0; left:-240px; width:220px; height:100%; background:#004d40; color:white; padding-top:60px; transition:0.3s; z-index:999; }
+       
+        .content { padding:80px 20px 20px 20px; transition: margin-left 0.3s; }
+        .content.active { margin-left:220px; }
+        .content { transition: margin-left 0.3s; }
+        
         .sidebar a { display:block; padding:12px 18px; color:white; text-decoration:none; font-weight:500; }
         .sidebar a:hover { background:#00796b; }
         #menuBtn { position:fixed; top:15px; left:15px; background:#004d40; color:white; padding:10px 14px; border-radius:6px; cursor:pointer; z-index:1000; }
         .content { padding:80px 20px 20px 20px; }
+        
+        
         table { width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
         thead { background:#009688; color:white; }
         th, td { padding:12px; border-bottom:1px solid #ddd; text-align:center; }
@@ -38,7 +44,7 @@ router.get("/", async (req, res) => {
         button { background:#009688; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; }
         button:hover { background:#00796b; }
 
-        /* Responsive */
+           /* Sidebar *//* Responsive */
         @media(max-width:768px){
           table, thead, tbody, th, td, tr { display:block; }
           tr { margin-bottom:15px; }
@@ -75,7 +81,7 @@ router.get("/", async (req, res) => {
         <a href="/logout">🚪 Logout</a>
       </div>
 
-      <div class="content">
+      <div class="content" id="mainContent">>
         <h2>Available Folders</h2>
         <table>
           <thead><tr><th>Folder</th><th>Date Extracted</th><th>Action</th></tr></thead>
@@ -114,8 +120,17 @@ router.get("/", async (req, res) => {
       </div>
 
       <script>
-        const menuBtn=document.getElementById("menuBtn"), sidebar=document.getElementById("sidebar");
-        menuBtn.addEventListener("click",()=>{ sidebar.style.left = sidebar.style.left==="0px"?"-240px":"0"; });
+        const menuBtn=document.getElementById("menuBtn");
+        const sidebar=document.getElementById("sidebar");
+        const content=document.getElementById("mainContent");
+        
+        menuBtn.addEventListener("click",()=> {
+          if(sidebar.style.left==="0px"){ 
+            sidebar.style.left="-240px"; content.classList.remove("active");
+          } else {
+            sidebar.style.left="0"; content.classList.add("active");
+          }
+        });
         
         let currentFolder=null;
         async function openFolder(folder){
