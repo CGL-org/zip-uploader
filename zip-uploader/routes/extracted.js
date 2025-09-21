@@ -29,7 +29,7 @@ router.get("/", async (req, res) => {
     
     /* Sidebar */
     #menuBtn {
-      position: fixed; top:15px; left:15px; background:#004d40;
+      position: fixed; top:15px; left:15px; background:#00796b;
       color:white; border:none; padding:10px 14px; border-radius:6px;
       cursor:pointer; font-size:1em; z-index:1001;
       box-shadow:0 2px 4px rgba(0,0,0,0.2);
