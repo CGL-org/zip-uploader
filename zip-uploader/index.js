@@ -10,6 +10,7 @@ import AdmZip from "adm-zip";
 import extractedRoutes from "./routes/extracted.js";
 import doneRouter from "./routes/done.js"; 
 import accountRoutes from "./routes/account.js";
+import bcrypt from "bcryptjs";
 
 dotenv.config();
 
@@ -113,13 +114,42 @@ app.get("/login", (req, res) => {
 });
 
 // Handle login
-app.post("/login", (req, res) => {
+app.post("/login", async (req, res) => {
   const { username, password } = req.body;
-  if (username === "admin" && password === "1234") {
-    req.session.user = { username };
-    return res.redirect("/");
+
+  try {
+    // fetch user by username
+    const { data: users, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("username", username)
+      .limit(1);
+
+    if (error) throw error;
+    if (!users || users.length === 0) {
+      return res.send("<h3>❌ Invalid username. <a href='/login'>Try again</a></h3>");
+    }
+
+    const user = users[0];
+
+    // check password
+    const valid = await bcrypt.compare(password, user.password_hash);
+    if (!valid) {
+      return res.send("<h3>❌ Invalid password. <a href='/login'>Try again</a></h3>");
+    }
+
+    // store user in session
+    req.session.user = {
+      id: user.id,
+      username: user.username,
+      full_name: user.full_name,
+    };
+
+    res.redirect("/");
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).send("Server error: " + err.message);
   }
-  res.send("<h3>❌ Invalid credentials. <a href='/login'>Try again</a></h3>");
 });
 
 // Logout
