@@ -28,18 +28,47 @@ router.get("/", async (req, res) => {
     header { background:#004d40; color:white; padding:15px; text-align:center; font-size:1.5em; position:sticky; top:0; z-index:100; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
     
     /* Sidebar */
-    #menuBtn {
-      position: fixed; top:15px; left:15px; background:#00796b;
-      color:white; border:none; padding:10px 14px; border-radius:6px;
-      cursor:pointer; font-size:1em; z-index:1001;
-      box-shadow:0 2px 4px rgba(0,0,0,0.2);
-    }
+      #menuBtn {
+        position: fixed; top:18px; left:18px; z-index:1100;
+        background:#00796b; color:white; border:none;
+        padding:8px 12px; border-radius:6px; cursor:pointer;
+        box-shadow:0 2px 6px rgba(0,0,0,0.15);
+      }
+
+    :root { --sidebar-w: 240px; --brand:#004d40; --accent:#009688; }
 
     .sidebar {
-      position: fixed; top:0; left:-240px; width:220px; height:100%;
-      background:#004d40; color:white; padding-top:60px; transition:0.3s;
-      box-shadow: 2px 0 6px rgba(0,0,0,0.2); z-index:1000;
-    }
+  position:fixed;
+  top:0;
+  left: calc(-1 * var(--sidebar-w));
+  width:var(--sidebar-w);
+  height:100vh;
+  background:var(--brand);
+  color:white;
+  padding-top:72px;
+  transition: left .28s ease;
+  box-shadow:2px 0 6px rgba(0,0,0,0.2);
+  z-index:1000;
+  overflow-y:auto;
+}
+.sidebar.active { left: 0; }
+
+/* Profile block */
+.sidebar .profile { text-align:center; padding:20px 14px; border-bottom:1px solid rgba(255,255,255,0.06); background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent); }
+.sidebar .profile img { width:96px; height:96px; border-radius:50%; object-fit:cover; border:3px solid rgba(255,255,255,0.18); display:block; margin:0 auto 10px; background:#fff; }
+.sidebar .profile h3 { margin:6px 0 2px; font-size:1rem; font-weight:600; color:#fff; }
+.sidebar .profile p { margin:0; font-size:0.85rem; color:rgba(255,255,255,0.8); }
+
+/* Menu area */
+.sidebar .menu { padding:16px 8px; }
+.sidebar .menu a {
+  display:flex; align-items:center; gap:10px; padding:10px 14px;
+  color:#fff; text-decoration:none; border-radius:8px; margin:8px 8px;
+  font-weight:500; transition: background .15s ease, transform .08s ease;
+}
+.sidebar .menu a:hover { background: rgba(255,255,255,0.05); transform: translateX(4px); }
+
+
     .sidebar a { display:block; padding:14px 18px; color:white; text-decoration:none; font-weight:500; transition:0.2s; }
     .sidebar a:hover { background:#00796b; padding-left:25px; }
 
@@ -81,12 +110,30 @@ router.get("/", async (req, res) => {
 </head>
 <body>
   <header>📂 Extracted Files</header>
-  <div id="menuBtn">☰ Menu</div>
-  <div id="sidebar" class="sidebar">
-    <a href="/">🏠 Dashboard</a>
-    <a href="/done">✅ Check and Complete</a>
-    <a href="/logout">🚪 Logout</a>
+  
+<button id="menuBtn" aria-label="Toggle menu">☰ Menu</button>
+
+<aside id="sidebar" class="sidebar" aria-label="Sidebar navigation">
+  <div class="profile" role="region" aria-label="User profile">
+    <img
+      src="https://via.placeholder.com/96?text=Profile"
+      alt="Profile"
+      width="96"
+      height="96"
+      style="display:block; width:96px; height:96px; object-fit:cover; border-radius:50%;"
+    />
+    <h3>${req.session.user.full_name || "User"}</h3>
+    <p>${req.session.user.role || "user"}</p>
   </div>
+
+  <nav class="menu" role="navigation" aria-label="Main menu">
+    <a href="/">🏠 Dashboard</a>
+    <a href="/done">✅ Check and Completed</a>
+    ${req.session.user.role === "admin" ? `<a href="/account">👥 Accounts</a>` : ""}
+    <a href="/logout">🚪 Logout</a>
+  </nav>
+</aside>
+
 
   <div class="content" id="mainContent">
     <h2>Available Folders</h2>
@@ -129,11 +176,19 @@ router.get("/", async (req, res) => {
     const sidebar = document.getElementById("sidebar");
     const content = document.getElementById("mainContent");
 
-    menuBtn.addEventListener("click", () => {
-      const isOpen = sidebar.style.left === "0px" || sidebar.style.left === "0";
-      sidebar.style.left = isOpen ? "-240px" : "0";
-      content.classList.toggle("active", !isOpen);
-    });
+menuBtn.addEventListener("click", () => {
+  sidebar.classList.toggle("active");
+  content.classList.toggle("shifted");
+});
+
+// Close sidebar when clicking outside
+document.addEventListener("click", (e) => {
+  if (!sidebar.contains(e.target) && !menuBtn.contains(e.target) && sidebar.classList.contains("active")) {
+    sidebar.classList.remove("active");
+    content.classList.remove("shifted");
+  }
+});
+
 
     let currentFolder = null;
     async function openFolder(folder) {
