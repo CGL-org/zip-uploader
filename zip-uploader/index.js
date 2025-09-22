@@ -192,17 +192,18 @@ app.get("/", requireLogin, async (req, res) => {
         .sidebar {
           position:fixed;
           top:0;
-          left:-1 * var(--sidebar-w); /* hidden by default; toggled with .active */
+          left: calc(-1 * var(--sidebar-w)); /* ✅ hide sidebar initially */
           width:var(--sidebar-w);
           height:100vh;
           background:var(--brand);
           color:white;
-          padding-top:72px; /* space for header */
+          padding-top:72px;
           transition: left .28s ease;
           box-shadow:2px 0 6px rgba(0,0,0,0.2);
           z-index:1000;
           overflow-y:auto;
         }
+
         .sidebar.active { left: 0; }
 
         /* Profile block */
