@@ -193,21 +193,20 @@ router.get("/create", (req, res) => {
   `);
 });
 
-// Handle create (upload profile optional)
 // CREATE ACCOUNT
-router.post("/create", async (req, res) => {
+// Handle create (upload profile optional)
+router.post("/create", upload.single("profile"), async (req, res) => {
   try {
     const {
       full_name,
       username,
-      password,   // 👈 take plain password from form
+      password,   // 👈 this will now come from req.body
       address,
       email,
       contact_number,
       gender,
     } = req.body;
 
-    // basic validation
     if (!username || !password || !full_name) {
       return res.status(400).send("Missing required fields");
     }
@@ -215,32 +214,51 @@ router.post("/create", async (req, res) => {
     // hash the password
     const hashed = bcrypt.hashSync(password, 10);
 
-    // 👇 THIS is where you insert into Supabase
-    const { data, error } = await supabase
+    let profile_path = null;
+    let profile_url = null;
+
+    // If file uploaded, save to Supabase storage
+    if (req.file) {
+      const filename = `profiles/${username}_${Date.now()}_${req.file.originalname}`;
+      const { error: uploadErr } = await supabase.storage
+        .from(USER_BUCKET)
+        .upload(filename, req.file.buffer, {
+          upsert: true,
+          contentType: req.file.mimetype,
+        });
+      if (uploadErr) throw uploadErr;
+      profile_path = filename;
+      profile_url = publicUrlFor(filename);
+    }
+
+    const { error } = await supabase
       .from("users")
       .insert([
         {
           full_name,
           username,
-          password_hash: hashed, // 👈 store hash into password_hash column
+          password_hash: hashed,
           address,
           email,
           contact_number,
           gender,
+          profile_path,
+          profile_url,
         },
       ]);
 
     if (error) {
       console.error("Insert error:", error);
-      return res.status(500).send("Failed to create account");
+      return res.status(500).send("Failed to create account: " + error.message);
     }
 
     res.redirect("/account");
   } catch (err) {
     console.error("Create error:", err);
-    res.status(500).send("Server error");
+    res.status(500).send("Server error: " + err.message);
   }
 });
+
 
 
 // Edit form
