@@ -114,13 +114,14 @@ app.get("/login", (req, res) => {
 });
 
 // Handle login
+// Handle login
 app.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
   try {
     const { data: users, error } = await supabase
       .from("users")
-      .select("*")
+      .select("id, username, full_name, password_hash, role") // ✅ fetch role
       .eq("username", username)
       .limit(1);
 
@@ -139,7 +140,7 @@ app.post("/login", async (req, res) => {
       id: user.id,
       username: user.username,
       full_name: user.full_name,
-      role: user.role || "user", // default user role
+      role: user.role ? user.role : "user", // ✅ respect role from DB
     };
 
     res.redirect("/");
@@ -148,6 +149,7 @@ app.post("/login", async (req, res) => {
     res.status(500).send("Server error: " + err.message);
   }
 });
+
 
 // Logout
 app.get("/logout", (req, res) => {
