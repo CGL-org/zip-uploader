@@ -15,60 +15,35 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // 📂 Extracted files page
 router.get("/", async (req, res) => {
-  if (!req.session.user) {
-    return res.redirect("/login"); // ✅ block if no session
-  }
-
   try {
     const { data, error } = await supabase.storage.from(EXTRACTED_BUCKET).list("");
     if (error) throw error;
 
-// Fetch latest profile info from Supabase
-let profileUrl = req.session.user.profile_url;
-
-if (!profileUrl) {
-  const { data: userProfile, error } = await supabase
-    .from("profiles") // 👈 change this to your actual table name
-    .select("profile_url")
-    .eq("id", req.session.user.id) // assuming `id` matches your user id
-    .single();
-
-  if (!error && userProfile && userProfile.profile_url) {
-    profileUrl = userProfile.profile_url;
-    req.session.user.profile_url = profileUrl; // cache it in session
-  }
-}
-
-// Build profileSrc with fallback
-const profileSrc = profileUrl
-  ? profileUrl
-  : "https://ui-avatars.com/api/?name=" +
-      encodeURIComponent(req.session.user.full_name || "User") +
-      "&background=009688&color=fff&size=96&rounded=true";
-
-
-
-
-    
     res.send(`
 <html>
 <head>
   <title>Extracted Files</title>
   <style>
-    body { margin:0; font-family: Arial, sans-serif; background:#f4f6f9; }
-    header { background:#004d40; color:white; padding:15px; text-align:center; font-size:1.5em; position:sticky; top:0; z-index:100; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
-    
+body { margin:0; font-family: 'Segoe UI', Roboto, Arial, sans-serif; background:#f4f6f9; color:#222; }
+header { background:var(--brand); color:white; padding:15px; text-align:center; font-size:1.25rem; position:fixed; left:0; right:0; top:0; z-index:900; }
+main { padding: 80px 24px 24px 24px; transition: margin-left .3s ease; }
     /* Sidebar */
-      #menuBtn {
-        position: fixed; top:18px; left:18px; z-index:1100;
-        background:#00796b; color:white; border:none;
-        padding:8px 12px; border-radius:6px; cursor:pointer;
-        box-shadow:0 2px 6px rgba(0,0,0,0.15);
-      }
-
-    :root { --sidebar-w: 240px; --brand:#004d40; --accent:#009688; }
-
-    .sidebar {
+#menuBtn {
+  position: fixed;
+  top:18px;
+  left:18px;
+  z-index:1100;
+  background:#00796b;
+  color:white;
+  border:none;
+  padding:8px 12px;
+  border-radius:6px;
+  cursor:pointer;
+  box-shadow:0 2px 6px rgba(0,0,0,0.15);
+}
+:root { --sidebar-w: 240px; --brand:#004d40; --accent:#009688; }
+* { box-sizing: border-box; }
+.sidebar {
   position:fixed;
   top:0;
   left: calc(-1 * var(--sidebar-w));
@@ -82,30 +57,51 @@ const profileSrc = profileUrl
   z-index:1000;
   overflow-y:auto;
 }
+    .sidebar a { display:block; padding:14px 18px; color:white; text-decoration:none; font-weight:500; transition:0.2s; }
+    .sidebar a:hover { background:#00796b; padding-left:25px; }
+
+
 .sidebar.active { left: 0; }
 
-/* Profile block */
-.sidebar .profile { text-align:center; padding:20px 14px; border-bottom:1px solid rgba(255,255,255,0.06); background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent); }
-.sidebar .profile img { width:96px; height:96px; border-radius:50%; object-fit:cover; border:3px solid rgba(255,255,255,0.18); display:block; margin:0 auto 10px; background:#fff; }
-.sidebar .profile h3 { margin:6px 0 2px; font-size:1rem; font-weight:600; color:#fff; }
-.sidebar .profile p { margin:0; font-size:0.85rem; color:rgba(255,255,255,0.8); }
+.sidebar .profile {
+  text-align:center;
+  padding:20px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+}
 
-/* Menu area */
+.sidebar .profile img {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid rgba(255,255,255,0.18);
+  display:block;
+  margin:0 auto 10px;
+  background:#fff;
+}
+
+.sidebar .profile h3 { margin:6px 0 2px; font-size:1rem; color:#fff; font-weight:600; }
+.sidebar .profile p { margin:0; color:rgba(255,255,255,0.8); font-size:0.85rem; }
+
 .sidebar .menu { padding:16px 8px; }
 .sidebar .menu a {
-  display:flex; align-items:center; gap:10px; padding:10px 14px;
-  color:#fff; text-decoration:none; border-radius:8px; margin:8px 8px;
-  font-weight:500; transition: background .15s ease, transform .08s ease;
+  display:flex; align-items:center; gap:10px;
+  padding:10px 14px;
+  color:#fff;
+  text-decoration:none;
+  border-radius:8px;
+  margin:8px 8px;
+  transition: background .15s ease, transform .08s ease;
+  font-weight:500;
 }
 .sidebar .menu a:hover { background: rgba(255,255,255,0.05); transform: translateX(4px); }
 
 
-    .sidebar a { display:block; padding:14px 18px; color:white; text-decoration:none; font-weight:500; transition:0.2s; }
-    .sidebar a:hover { background:#00796b; padding-left:25px; }
 
     /* Content */
-    .content { transition: margin-left 0.3s; padding:20px; margin-left:0; }
-    .content.active { margin-left:220px; }
+ .content { transition: margin-left .28s ease; margin-left: 0; }
+.content.shifted { margin-left: var(--sidebar-w); }
 
     /* Table */
     table { width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-top:20px; }
@@ -141,30 +137,27 @@ const profileSrc = profileUrl
 </head>
 <body>
   <header>📂 Extracted Files</header>
-  
 <button id="menuBtn" aria-label="Toggle menu">☰ Menu</button>
 
 <aside id="sidebar" class="sidebar" aria-label="Sidebar navigation">
   <div class="profile" role="region" aria-label="User profile">
     <img
-      src="${profileSrc}"
+      src="https://via.placeholder.com/150?text=Profile"
       alt="Profile"
       width="96"
       height="96"
       style="display:block; width:96px; height:96px; object-fit:cover; border-radius:50%;"
     />
-    <h3>${req.session.user.full_name || "User"}</h3>
-    <p>${req.session.user.role || "user"}</p>
+    <h3>Extracted Files</h3>
+    <p>Viewer</p>
   </div>
 
   <nav class="menu" role="navigation" aria-label="Main menu">
     <a href="/">🏠 Dashboard</a>
     <a href="/done">✅ Check and Completed</a>
-    ${req.session.user.role === "admin" ? `<a href="/account">👥 Accounts</a>` : ""}
     <a href="/logout">🚪 Logout</a>
   </nav>
 </aside>
-
 
   <div class="content" id="mainContent">
     <h2>Available Folders</h2>
@@ -219,7 +212,6 @@ document.addEventListener("click", (e) => {
     content.classList.remove("shifted");
   }
 });
-
 
     let currentFolder = null;
     async function openFolder(folder) {
