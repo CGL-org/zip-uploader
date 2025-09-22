@@ -116,7 +116,7 @@ router.get("/", async (req, res) => {
 <aside id="sidebar" class="sidebar" aria-label="Sidebar navigation">
   <div class="profile" role="region" aria-label="User profile">
     <img
-      src="https://via.placeholder.com/96?text=Profile"
+      src="${profileSrc}"
       alt="Profile"
       width="96"
       height="96"
