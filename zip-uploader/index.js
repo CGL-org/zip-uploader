@@ -75,6 +75,35 @@ app.get("/login", (req, res) => {
   <head>
     <title>Login</title>
     <style>
+
+.profile {
+  text-align: center;
+  padding: 20px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+.profile img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #fff;
+  margin-bottom: 10px;
+}
+.profile h3 {
+  margin: 5px 0 2px;
+  font-size: 1.1em;
+}
+.profile p {
+  margin: 0;
+  font-size: 0.9em;
+  color: #cfd8dc;
+}
+.menu {
+  margin-top: 20px;
+}
+
+
+    
       body {
         display:flex; align-items:center; justify-content:center;
         height:100vh; margin:0; font-family:Arial;
@@ -219,8 +248,15 @@ app.get("/", requireLogin, async (req, res) => {
     <body>
       <header>🏠 Dashboard (${req.session.user.role})</header>
       <button id="menuBtn">☰ Menu</button>
-      <div id="sidebar" class="sidebar">
-        ${sidebarLinks}
+       <div id="sidebar" class="sidebar">
+        <div class="profile">
+          <img src="${req.session.user.profile_photo || "https://via.placeholder.com/100"}" alt="Profile" />
+          <h3>${req.session.user.full_name || "User"}</h3>
+          <p>${req.session.user.role || "user"}</p>
+        </div>
+        <div class="menu">
+          ${sidebarLinks}
+        </div>
       </div>
 
       <div class="content" id="mainContent">
