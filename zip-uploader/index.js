@@ -101,7 +101,7 @@ app.get("/login", (req, res) => {
   </head>
   <body>
     <div class="login-box">
-      <h2>🔐 Admin Login</h2>
+      <h2>🔐 Login</h2>
       <form method="POST" action="/login">
         <input type="text" name="username" placeholder="Username" required /><br/>
         <input type="password" name="password" placeholder="Password" required /><br/>
@@ -118,7 +118,6 @@ app.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
   try {
-    // fetch user by username
     const { data: users, error } = await supabase
       .from("users")
       .select("*")
@@ -131,18 +130,16 @@ app.post("/login", async (req, res) => {
     }
 
     const user = users[0];
-
-    // check password
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) {
       return res.send("<h3>❌ Invalid password. <a href='/login'>Try again</a></h3>");
     }
 
-    // store user in session
     req.session.user = {
       id: user.id,
       username: user.username,
       full_name: user.full_name,
+      role: user.role || "user", // default user role
     };
 
     res.redirect("/");
@@ -161,6 +158,17 @@ app.get("/logout", (req, res) => {
 app.get("/", requireLogin, async (req, res) => {
   try {
     const files = await getFileList();
+    const isAdmin = req.session.user.role === "admin";
+
+    // sidebar links depending on role
+    const sidebarLinks = `
+      <a href="/">🏠 Dashboard</a>
+      <a href="/extracted">📂 Extracted Files</a>
+      <a href="/done">✅ Check and Completed</a>
+      ${isAdmin ? `<a href="/account">👥 Accounts</a>` : ""}
+      <a href="/logout">🚪 Logout</a>
+    `;
+
     res.send(`
     <html>
     <head>
@@ -169,64 +177,49 @@ app.get("/", requireLogin, async (req, res) => {
         body { margin:0; font-family: 'Segoe UI', sans-serif; background:#f4f6f9; }
         header { background:#004d40; color:white; padding:15px; text-align:center; font-size:1.5em; }
 
-        /* Sidebar */
         .sidebar {
           position:fixed; top:0; left:-240px; width:220px; height:100%;
           background:#004d40; color:white; padding-top:60px; transition:0.3s;
           box-shadow:2px 0 6px rgba(0,0,0,0.2);
           z-index: 1000;
         }
-        
         .sidebar.active { left: 0; }
-        
         .sidebar a {
           display:block; padding:14px 18px; color:white; text-decoration:none;
           font-weight:500; transition:0.2s;
         }
         .sidebar a:hover { background:#00796b; padding-left:25px; }
 
-        /* Menu Button */
         #menuBtn {
           position:fixed; top:15px; left:15px; background:#00796b;
           color:white; border:none; padding:10px 14px; cursor:pointer;
           border-radius:6px; font-size:1em; z-index:2000;
         }
 
-        /* Content */
         .content { padding:20px; margin-left:0; transition:margin-left 0.3s; }
         .content.shifted { margin-left: 220px; }
-        
-        /* Table */
-           table { width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-top:20px; }
+
+        table { width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-top:20px; }
         thead { background:#009688; color:white; }
         th, td { padding:12px; border-bottom:1px solid #ddd; text-align:center; word-break:break-word; }
         tbody tr:nth-child(even) { background:#f9f9f9; }
         button { background:#009688; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; }
         button:hover { background:#00796b; }
-      
-            /* Responsive table */
-    @media(max-width:768px){
-      table, thead, tbody, th, td, tr { display:block; width:100%; }
-      thead { display:none; }
-      tr { margin-bottom:15px; background:white; border-radius:6px; padding:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
-      td { text-align:right; padding-left:50%; position:relative; }
-      td::before { content:attr(data-label); position:absolute; left:10px; width:45%; font-weight:bold; text-align:left; }
-    }
         
+        @media(max-width:768px){
+          table, thead, tbody, th, td, tr { display:block; width:100%; }
+          thead { display:none; }
+          tr { margin-bottom:15px; background:white; border-radius:6px; padding:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+          td { text-align:right; padding-left:50%; position:relative; }
+          td::before { content:attr(data-label); position:absolute; left:10px; width:45%; font-weight:bold; text-align:left; }
+        }
       </style>
     </head>
     <body>
-      <header>🏠 Admin Dashboard</header>
+      <header>🏠 Dashboard (${req.session.user.role})</header>
       <button id="menuBtn">☰ Menu</button>
       <div id="sidebar" class="sidebar">
-        <a href="/">🏠 Dashboard</a>
-        <a href="/extracted">📂 Extracted Files</a>
-        <a href="/done">✅ Check and Completed</a>
-        <a href="/account">👥 Accounts</a>
-        <a href="#">➕ Create Account</a>
-        <a href="#">✏ Update Account</a>
-        <a href="#">🗑 Delete Account</a>
-        <a href="/logout">🚪 Logout</a>
+        ${sidebarLinks}
       </div>
 
       <div class="content" id="mainContent">
@@ -250,16 +243,16 @@ app.get("/", requireLogin, async (req, res) => {
         </table>
       </div>
 
-        <script>
+      <script>
         const menuBtn = document.getElementById("menuBtn");
         const sidebar = document.getElementById("sidebar");
         const content = document.getElementById("mainContent");
         
         menuBtn.addEventListener("click", () => {
-          sidebar.classList.toggle("active");   // toggle sidebar
-          content.classList.toggle("shifted");  // shift content
+          sidebar.classList.toggle("active");
+          content.classList.toggle("shifted");
         });
-        </script>
+      </script>
     </body>
     </html>
     `);
@@ -268,7 +261,7 @@ app.get("/", requireLogin, async (req, res) => {
   }
 });
 
-// Extract ZIP into another bucket and delete original
+// Extract ZIP into another bucket
 app.get("/extract/:fileName", requireLogin, async (req, res) => {
   const fileName = req.params.fileName;
   try {
