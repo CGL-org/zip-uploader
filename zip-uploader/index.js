@@ -9,6 +9,7 @@ import session from "express-session";
 import AdmZip from "adm-zip";
 import extractedRoutes from "./routes/extracted.js";
 import doneRouter from "./routes/done.js"; 
+import accountRoutes from "./routes/account.js";
 
 dotenv.config();
 
