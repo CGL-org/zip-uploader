@@ -82,14 +82,17 @@ app.get("/login", (req, res) => {
   border-bottom: 1px solid rgba(255,255,255,0.2);
 }
 .profile img {
-  width: 100px;
-  height: 100px;
+  max-width: 120px;  
+  max-height: 120px;
+  width: 100%;
+  height: auto;
   border-radius: 50%;
   object-fit: cover;
   border: 3px solid #fff;
-  margin: 0 auto 10px auto;
   display: block;
+  margin: 0 auto 10px auto;
 }
+
 .profile h3 {
   margin: 5px 0 2px;
   font-size: 1.1em;
