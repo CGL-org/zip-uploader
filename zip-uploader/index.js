@@ -8,7 +8,7 @@ import cors from "cors";
 import session from "express-session";
 import AdmZip from "adm-zip";
 import extractedRoutes from "./routes/extracted.js";
-import doneRouter from "./routes/done.js"; 
+import doneRouter from "./routes/done.js";
 import accountRoutes from "./routes/account.js";
 import bcrypt from "bcryptjs";
 
@@ -68,46 +68,13 @@ function requireLogin(req, res, next) {
   next();
 }
 
-// Login page
+// ---------- LOGIN PAGE ----------
 app.get("/login", (req, res) => {
   res.send(`
   <html>
   <head>
     <title>Login</title>
     <style>
-
-.profile {
-  text-align: center;
-  padding: 20px 10px;
-  border-bottom: 1px solid rgba(255,255,255,0.2);
-}
-.profile img {
-  width: 100px;          /* fixed circle size */
-  height: 100px;
-  border-radius: 50%;
-  object-fit: cover;     /* keep aspect ratio */
-  border: 3px solid #fff;
-  display: block;
-  margin: 0 auto 10px auto; /* center horizontally */
-}
-
-.profile h3 {
-  margin: 5px 0 2px;
-  font-size: 1.1em;
-  font-weight: 600;
-  color: #fff;
-}
-.profile p {
-  margin: 0;
-  font-size: 0.9em;
-  color: #cfd8dc;
-}
-.menu {
-  margin-top: 20px;
-}
-
-
-    
       body {
         display:flex; align-items:center; justify-content:center;
         height:100vh; margin:0; font-family:Arial;
@@ -146,15 +113,14 @@ app.get("/login", (req, res) => {
   `);
 });
 
-// Handle login
-// Handle login
+// ---------- LOGIN HANDLER ----------
 app.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
   try {
     const { data: users, error } = await supabase
       .from("users")
-      .select("id, username, full_name, password_hash, user_type, profile_photo") // ✅ fetch role
+      .select("id, username, full_name, password_hash, user_type, profile_photo")
       .eq("username", username)
       .limit(1);
 
@@ -174,7 +140,7 @@ app.post("/login", async (req, res) => {
       username: user.username,
       full_name: user.full_name,
       role: user.user_type ? user.user_type : "user",
-      profile_photo: user.profile_photo || null// ✅ respect role from DB
+      profile_photo: user.profile_photo || null
     };
 
     res.redirect("/");
@@ -184,121 +150,230 @@ app.post("/login", async (req, res) => {
   }
 });
 
-
 // Logout
 app.get("/logout", (req, res) => {
   req.session.destroy(() => res.redirect("/login"));
 });
 
-// Dashboard
+// ---------- DASHBOARD ----------
 app.get("/", requireLogin, async (req, res) => {
   try {
     const files = await getFileList();
     const isAdmin = req.session.user.role === "admin";
-
-    // sidebar links depending on role
     const sidebarLinks = `
+      <a href="/">🏠 Dashboard</a>
       <a href="/extracted">📂 Extracted Files</a>
       <a href="/done">✅ Check and Completed</a>
       ${isAdmin ? `<a href="/account">👥 Accounts</a>` : ""}
       <a href="/logout">🚪 Logout</a>
     `;
 
+    // safe fallback for profile (use a small placeholder if missing)
+    const profileSrc = req.session.user.profile_photo
+      ? req.session.user.profile_photo
+      : "https://via.placeholder.com/150?text=Profile";
+
     res.send(`
+    <!doctype html>
     <html>
     <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width,initial-scale=1" />
       <title>Dashboard</title>
       <style>
-        body { margin:0; font-family: 'Segoe UI', sans-serif; background:#f4f6f9; }
-        header { background:#004d40; color:white; padding:15px; text-align:center; font-size:1.5em; }
+        :root { --sidebar-w: 240px; --brand:#004d40; --accent:#009688; }
+        * { box-sizing: border-box; }
 
+        body { margin:0; font-family: 'Segoe UI', Roboto, Arial, sans-serif; background:#f4f6f9; color:#222; }
+        header { background:var(--brand); color:white; padding:15px; text-align:center; font-size:1.25rem; position:fixed; left:0; right:0; top:0; z-index:900; }
+        main { padding: 80px 24px 24px 24px; transition: margin-left .3s ease; }
+
+        /* Sidebar */
         .sidebar {
-          position:fixed; top:0; left:-240px; width:220px; height:100%;
-          background:#004d40; color:white; padding-top:60px; transition:0.3s;
+          position:fixed;
+          top:0;
+          left:-1 * var(--sidebar-w); /* hidden by default; toggled with .active */
+          width:var(--sidebar-w);
+          height:100vh;
+          background:var(--brand);
+          color:white;
+          padding-top:72px; /* space for header */
+          transition: left .28s ease;
           box-shadow:2px 0 6px rgba(0,0,0,0.2);
-          z-index: 1000;
+          z-index:1000;
+          overflow-y:auto;
         }
         .sidebar.active { left: 0; }
-        .sidebar a {
-          display:block; padding:14px 18px; color:white; text-decoration:none;
-          font-weight:500; transition:0.2s;
-        }
-        .sidebar a:hover { background:#00796b; padding-left:25px; }
 
+        /* Profile block */
+        .sidebar .profile {
+          text-align:center;
+          padding:20px 14px;
+          border-bottom: 1px solid rgba(255,255,255,0.06);
+          background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+        }
+
+        /* inline width/height attributes on the <img> ensure the browser reserves space immediately */
+        .sidebar .profile img {
+          width: 96px;      /* fixed visual size */
+          height: 96px;
+          max-width: 96px;
+          max-height: 96px;
+          border-radius: 50%;
+          object-fit: cover;
+          border: 3px solid rgba(255,255,255,0.18);
+          display:block;
+          margin:0 auto 10px;
+          background: #fff; /* placeholder bg while image loads */
+        }
+
+        .sidebar .profile h3 {
+          margin:6px 0 2px;
+          font-size: 1rem;
+          color:#fff;
+          line-height:1.1;
+          font-weight:600;
+        }
+        .sidebar .profile p {
+          margin:0;
+          color:rgba(255,255,255,0.8);
+          font-size:0.85rem;
+        }
+
+        /* Menu area */
+        .sidebar .menu {
+          padding:16px 8px;
+        }
+        .sidebar .menu a {
+          display:flex;
+          align-items:center;
+          gap:10px;
+          padding:10px 14px;
+          color: #fff;
+          text-decoration:none;
+          border-radius:8px;
+          margin:8px 8px;
+          transition: background .15s ease, transform .08s ease;
+          font-weight:500;
+        }
+        .sidebar .menu a:hover {
+          background: rgba(255,255,255,0.05);
+          transform: translateX(4px);
+        }
+
+        /* Menu button */
         #menuBtn {
-          position:fixed; top:15px; left:15px; background:#00796b;
-          color:white; border:none; padding:10px 14px; cursor:pointer;
-          border-radius:6px; font-size:1em; z-index:2000;
+          position: fixed;
+          top:18px;
+          left:18px;
+          z-index:1100;
+          background: #00796b;
+          color:white;
+          border:none;
+          padding:8px 12px;
+          border-radius:6px;
+          cursor:pointer;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.15);
         }
 
-        .content { padding:20px; margin-left:0; transition:margin-left 0.3s; }
-        .content.shifted { margin-left: 220px; }
+        /* Content (table area) */
+        .content {
+          transition: margin-left .28s ease;
+          margin-left: 0;
+        }
+        .content.shifted { margin-left: var(--sidebar-w); }
 
-        table { width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-top:20px; }
-        thead { background:#009688; color:white; }
-        th, td { padding:12px; border-bottom:1px solid #ddd; text-align:center; word-break:break-word; }
-        tbody tr:nth-child(even) { background:#f9f9f9; }
-        button { background:#009688; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; }
-        button:hover { background:#00796b; }
-        
-        @media(max-width:768px){
-          table, thead, tbody, th, td, tr { display:block; width:100%; }
-          thead { display:none; }
-          tr { margin-bottom:15px; background:white; border-radius:6px; padding:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
-          td { text-align:right; padding-left:50%; position:relative; }
-          td::before { content:attr(data-label); position:absolute; left:10px; width:45%; font-weight:bold; text-align:left; }
+        /* Table styling */
+        .panel {
+          background: #fff;
+          padding: 18px;
+          border-radius: 10px;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        }
+        table { width:100%; border-collapse:collapse; margin-top: 12px; }
+        thead { background: var(--accent); color: #fff; border-radius:6px; }
+        th, td { padding:12px; text-align:center; border-bottom:1px solid #eee; }
+
+        /* small screens */
+        @media (max-width:720px) {
+          :root { --sidebar-w: 200px; }
+          .sidebar .profile img { width:72px; height:72px; max-width:72px; max-height:72px; }
+          #menuBtn { left:12px; top:12px; }
         }
       </style>
     </head>
     <body>
       <header>🏠 Dashboard (${req.session.user.role})</header>
-      <button id="menuBtn">☰ Menu</button>
-       <div id="sidebar" class="sidebar">
-        <div class="profile">
-          <img src="${req.session.user.profile_photo || "https://via.placeholder.com/100"}" alt="Profile" />
+
+      <button id="menuBtn" aria-label="Toggle menu">☰ Menu</button>
+
+      <aside id="sidebar" class="sidebar" aria-label="Sidebar navigation">
+        <div class="profile" role="region" aria-label="User profile">
+          <!-- inline size attributes + style ensure immediate layout, CSS refines styling -->
+          <img
+            src="${profileSrc}"
+            alt="Profile"
+            width="96"
+            height="96"
+            style="display:block; width:96px; height:96px; object-fit:cover; border-radius:50%;"
+          />
           <h3>${req.session.user.full_name || "User"}</h3>
           <p>${req.session.user.role || "user"}</p>
         </div>
-        <div class="menu">
-          ${sidebarLinks}
-        </div>
-      </div>
 
-      <div class="content" id="mainContent">
-        <h2>📦 Stored Files</h2>
-        <table>
-          <thead>
-            <tr><th>Name</th><th>Type</th><th>Size</th><th>Last Modified</th><th>Action</th></tr>
-          </thead>
-          <tbody>
-          ${files.map(f => `
-            <tr>
-              <td>${f.name}</td>
-              <td>${f.metadata?.mimetype || "N/A"}</td>
-              <td>${f.metadata?.size || "?"} bytes</td>
-              <td>${f.updated_at || "N/A"}</td>
-              <td>${f.name.endsWith(".zip") 
-                ? `<a href="/extract/${encodeURIComponent(f.name)}">Extract</a>` 
-                : "-"}</td>
-            </tr>`).join('')}
-          </tbody>
-        </table>
-      </div>
+        <nav class="menu" role="navigation" aria-label="Main menu">
+          ${sidebarLinks}
+        </nav>
+      </aside>
+
+      <main class="content" id="mainContent">
+        <div class="panel">
+          <h2>📦 Stored Files</h2>
+          <table>
+            <thead>
+              <tr><th>Name</th><th>Type</th><th>Size</th><th>Last Modified</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+            ${files.map(f => `
+              <tr>
+                <td>${f.name}</td>
+                <td>${f.metadata?.mimetype || "N/A"}</td>
+                <td>${f.metadata?.size || "?"} bytes</td>
+                <td>${f.updated_at || "N/A"}</td>
+                <td>${f.name.endsWith(".zip")
+                  ? `<a href="/extract/${encodeURIComponent(f.name)}">Extract</a>`
+                  : "-"}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </main>
 
       <script>
-        const menuBtn = document.getElementById("menuBtn");
-        const sidebar = document.getElementById("sidebar");
-        const content = document.getElementById("mainContent");
-        
-        menuBtn.addEventListener("click", () => {
-          sidebar.classList.toggle("active");
-          content.classList.toggle("shifted");
-        });
+        (function() {
+          const menuBtn = document.getElementById("menuBtn");
+          const sidebar = document.getElementById("sidebar");
+          const mainContent = document.querySelector(".content");
+
+          menuBtn.addEventListener("click", () => {
+            sidebar.classList.toggle("active");
+            mainContent.classList.toggle("shifted");
+          });
+
+          // Close sidebar when clicking outside on small screens
+          document.addEventListener("click", (e) => {
+            if (!sidebar.contains(e.target) && !menuBtn.contains(e.target) && sidebar.classList.contains("active")) {
+              sidebar.classList.remove("active");
+              mainContent.classList.remove("shifted");
+            }
+          });
+        })();
       </script>
     </body>
     </html>
     `);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -330,7 +405,7 @@ app.get("/extract/:fileName", requireLogin, async (req, res) => {
       Buffer.from(JSON.stringify({ extractedAt: new Date().toISOString() })),
       { upsert: true, contentType: "application/json" }
     );
-    
+
     res.redirect("/extracted");
   } catch (err) {
     console.error("❌ Extract error:", err);
@@ -359,4 +434,4 @@ app.use("/account", requireLogin, accountRoutes);
 
 // Start server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✅ Server listening on port ${PORT}`));
+app.listen(PORT, () => console.log(\`✅ Server listening on port \${PORT}\`));
