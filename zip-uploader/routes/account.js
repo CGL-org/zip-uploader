@@ -89,7 +89,7 @@ router.get("/", async (req, res) => {
 
           <table>
             <thead>
-              <tr><th>Photo</th><th>Full name</th><th>Username</th><th>Email</th><th>Contact</th><th>Gender</th><th>Action</th></tr>
+              <tr><th>Photo</th><th>Full name</th><th>Username</th><th>Email</th><th>Contact</th><th>Gender</th><th>User Type</th><th>Action</th></tr>
             </thead>
             <tbody>
               ${users
@@ -103,6 +103,7 @@ router.get("/", async (req, res) => {
                       <td>${u.email || "-"}</td>
                       <td>${u.contact_number || "-"}</td>
                       <td>${u.gender || "-"}</td>
+                      <td>${u.user_type || "user"}</td>
                       <td class="actions">
                         <a class="btn-edit" href="/account/edit/${u.id}">Edit</a>
                         <form style="display:inline" method="POST" action="/account/delete/${u.id}" onsubmit="return confirm('Delete user?')">
@@ -181,6 +182,9 @@ router.get("/create", (req, res) => {
           <label>Gender</label>
           <select name="gender"><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select>
 
+          <label>User Type</label>
+          <select name="user_type"><option value="user" selected>User</option><option value="admin">Admin</option></select>
+
           <div style="margin-top:12px; display:flex; gap:8px;">
             <button type="submit">Create</button>
             <a href="/account" style="align-self:center; margin-left:8px;">Cancel</a>
@@ -203,6 +207,7 @@ router.post("/create", upload.single("profile"), async (req, res) => {
       email,
       contact_number,
       gender,
+      user_type,
     } = req.body;
 
     if (!username || !password || !full_name) {
@@ -234,6 +239,7 @@ router.post("/create", upload.single("profile"), async (req, res) => {
         contact_number,
         gender,
         profile_photo,
+        user_type: user_type || "user",
       },
     ]);
 
@@ -307,6 +313,12 @@ router.get("/edit/:id", async (req, res) => {
               <option ${u.gender === 'Other' ? 'selected' : ''}>Other</option>
             </select>
 
+            <label>User Type</label>
+            <select name="user_type">
+              <option value="user" ${u.user_type === 'user' ? 'selected' : ''}>User</option>
+              <option value="admin" ${u.user_type === 'admin' ? 'selected' : ''}>Admin</option>
+            </select>
+
             <div style="margin-top:12px; display:flex; gap:8px;">
               <button type="submit">Save</button>
               <a href="/account" style="align-self:center; margin-left:8px;">Cancel</a>
@@ -334,6 +346,7 @@ router.post("/edit/:id", upload.single("profile"), async (req, res) => {
       email,
       contact_number,
       gender,
+      user_type,
     } = req.body;
 
     const { data: existing, error: fetchErr } = await supabase.from("users").select("*").eq("id", id).single();
@@ -359,6 +372,7 @@ router.post("/edit/:id", upload.single("profile"), async (req, res) => {
       contact_number,
       gender,
       profile_photo,
+      user_type: user_type || "user",
     };
 
     if (password && password.trim() !== "") {
