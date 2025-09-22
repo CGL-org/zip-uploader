@@ -199,7 +199,7 @@ router.post("/create", upload.single("profile"), async (req, res) => {
     const {
       full_name,
       username,
-      password,
+      password_hash,
       address,
       email,
       contact_number,
