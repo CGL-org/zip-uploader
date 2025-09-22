@@ -1,7 +1,6 @@
 // routes/account.js
-// Express router for simple user account CRUD with profile photo upload
-// Uses Supabase (service role key) for DB and storage. Please ensure
-// SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are available in your .env
+// Express router for user account CRUD with profile photo upload
+// Uses Supabase (service role key) for DB and storage.
 
 import express from "express";
 import multer from "multer";
@@ -34,7 +33,7 @@ function publicUrlFor(path) {
   }
 }
 
-// List users (HTML)
+// ================== LIST USERS ==================
 router.get("/", async (req, res) => {
   try {
     const { data: users, error } = await supabase
@@ -95,7 +94,7 @@ router.get("/", async (req, res) => {
             <tbody>
               ${users
                 .map((u) => {
-                  const photo = u.profile_url || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48'><rect width='100%' height='100%' fill='%23ddd'/></svg>";
+                  const photo = u.profile_photo || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48'><rect width='100%' height='100%' fill='%23ddd'/></svg>";
                   return `
                     <tr>
                       <td><img class="avatar" src="${photo}" alt="avatar"/></td>
@@ -136,7 +135,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Create form
+// ================== CREATE FORM ==================
 router.get("/create", (req, res) => {
   res.send(`
     <!doctype html>
@@ -193,14 +192,13 @@ router.get("/create", (req, res) => {
   `);
 });
 
-// CREATE ACCOUNT
-// Handle create (upload profile optional)
+// ================== HANDLE CREATE ==================
 router.post("/create", upload.single("profile"), async (req, res) => {
   try {
     const {
       full_name,
       username,
-      password,   // 👈 this will now come from req.body
+      password,
       address,
       email,
       contact_number,
@@ -211,13 +209,9 @@ router.post("/create", upload.single("profile"), async (req, res) => {
       return res.status(400).send("Missing required fields");
     }
 
-    // hash the password
     const hashed = bcrypt.hashSync(password, 10);
+    let profile_photo = null;
 
-    let profile_path = null;
-    let profile_url = null;
-
-    // If file uploaded, save to Supabase storage
     if (req.file) {
       const filename = `profiles/${username}_${Date.now()}_${req.file.originalname}`;
       const { error: uploadErr } = await supabase.storage
@@ -227,25 +221,21 @@ router.post("/create", upload.single("profile"), async (req, res) => {
           contentType: req.file.mimetype,
         });
       if (uploadErr) throw uploadErr;
-      profile_path = filename;
-      profile_url = publicUrlFor(filename);
+      profile_photo = publicUrlFor(filename);
     }
 
-    const { error } = await supabase
-      .from("users")
-      .insert([
-        {
-          full_name,
-          username,
-          password_hash: hashed,
-          address,
-          email,
-          contact_number,
-          gender,
-          profile_path,
-          profile_url,
-        },
-      ]);
+    const { error } = await supabase.from("users").insert([
+      {
+        full_name,
+        username,
+        password_hash: hashed,
+        address,
+        email,
+        contact_number,
+        gender,
+        profile_photo,
+      },
+    ]);
 
     if (error) {
       console.error("Insert error:", error);
@@ -259,15 +249,12 @@ router.post("/create", upload.single("profile"), async (req, res) => {
   }
 });
 
-
-
-// Edit form
+// ================== EDIT FORM ==================
 router.get("/edit/:id", async (req, res) => {
   try {
     const id = req.params.id;
-    const { data, error } = await supabase.from("users").select("*").eq("id", id).single();
+    const { data: u, error } = await supabase.from("users").select("*").eq("id", id).single();
     if (error) throw error;
-    const u = data;
 
     res.send(`
       <!doctype html>
@@ -291,7 +278,7 @@ router.get("/edit/:id", async (req, res) => {
           <form method="POST" action="/account/edit/${u.id}" enctype="multipart/form-data">
             <label>Profile photo</label>
             <div style="display:flex; gap:12px; align-items:center;">
-              <img src="${u.profile_url || ''}" style="width:72px;height:72px;border-radius:8px;object-fit:cover;border:1px solid #ddd"/>
+              <img src="${u.profile_photo || ''}" style="width:72px;height:72px;border-radius:8px;object-fit:cover;border:1px solid #ddd"/>
               <input type="file" name="profile" accept="image/*" />
             </div>
 
@@ -335,7 +322,7 @@ router.get("/edit/:id", async (req, res) => {
   }
 });
 
-// Handle edit
+// ================== HANDLE EDIT ==================
 router.post("/edit/:id", upload.single("profile"), async (req, res) => {
   try {
     const id = req.params.id;
@@ -349,26 +336,19 @@ router.post("/edit/:id", upload.single("profile"), async (req, res) => {
       gender,
     } = req.body;
 
-    // fetch existing record to know profile_path
     const { data: existing, error: fetchErr } = await supabase.from("users").select("*").eq("id", id).single();
     if (fetchErr) throw fetchErr;
 
-    let profile_path = existing.profile_path;
-    let profile_url = existing.profile_url;
+    let profile_photo = existing.profile_photo;
 
     if (req.file) {
-      // if there was an old profile_path, try to delete it
-      if (profile_path) {
-        try { await supabase.storage.from(USER_BUCKET).remove([profile_path]); } catch(e) { /* ignore */ }
-      }
       const filename = `profiles/${username}_${Date.now()}_${req.file.originalname}`;
       const { error: uploadErr } = await supabase.storage.from(USER_BUCKET).upload(filename, req.file.buffer, {
         upsert: true,
         contentType: req.file.mimetype,
       });
       if (uploadErr) throw uploadErr;
-      profile_path = filename;
-      profile_url = publicUrlFor(filename);
+      profile_photo = publicUrlFor(filename);
     }
 
     const updates = {
@@ -378,12 +358,11 @@ router.post("/edit/:id", upload.single("profile"), async (req, res) => {
       email,
       contact_number,
       gender,
-      profile_path,
-      profile_url,
+      profile_photo,
     };
 
     if (password && password.trim() !== "") {
-      updates.password_hash = bcrypt.hashSync(password, 10); // ✅ save to correct column
+      updates.password_hash = bcrypt.hashSync(password, 10);
     }
     
     const { error } = await supabase.from("users").update(updates).eq("id", id);
@@ -396,18 +375,10 @@ router.post("/edit/:id", upload.single("profile"), async (req, res) => {
   }
 });
 
-// Delete user
+// ================== DELETE ==================
 router.post("/delete/:id", async (req, res) => {
   try {
     const id = req.params.id;
-    // fetch user
-    const { data, error: fErr } = await supabase.from("users").select("*").eq("id", id).single();
-    if (fErr) throw fErr;
-
-    if (data.profile_path) {
-      try { await supabase.storage.from(USER_BUCKET).remove([data.profile_path]); } catch(e) { /* ignore */ }
-    }
-
     const { error } = await supabase.from("users").delete().eq("id", id);
     if (error) throw error;
 
