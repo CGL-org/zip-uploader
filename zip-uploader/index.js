@@ -290,6 +290,7 @@ app.post("/upload-zip", upload.single("file"), async (req, res) => {
 // Mount routes
 app.use("/extracted", requireLogin, extractedRoutes);
 app.use("/done", requireLogin, doneRouter);
+app.use("/done", requireLogin, doneRouter);
 
 // Start server
 const PORT = process.env.PORT || 3000;
