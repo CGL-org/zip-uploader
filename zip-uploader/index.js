@@ -82,8 +82,8 @@ app.get("/login", (req, res) => {
   border-bottom: 1px solid rgba(255,255,255,0.2);
 }
 .profile img {
-  max-width: 120px;  
-  max-height: 120px;
+  max-width: 50px;  
+  max-height: 50px;
   width: 100%;
   height: auto;
   border-radius: 50%;
