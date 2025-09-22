@@ -23,11 +23,29 @@ router.get("/", async (req, res) => {
     const { data, error } = await supabase.storage.from(EXTRACTED_BUCKET).list("");
     if (error) throw error;
 
-const profileSrc = req.session.user.profile_url
-  ? req.session.user.profile_url
+// Fetch latest profile info from Supabase
+let profileUrl = req.session.user.profile_url;
+
+if (!profileUrl) {
+  const { data: userProfile, error } = await supabase
+    .from("profiles") // 👈 change this to your actual table name
+    .select("profile_url")
+    .eq("id", req.session.user.id) // assuming `id` matches your user id
+    .single();
+
+  if (!error && userProfile && userProfile.profile_url) {
+    profileUrl = userProfile.profile_url;
+    req.session.user.profile_url = profileUrl; // cache it in session
+  }
+}
+
+// Build profileSrc with fallback
+const profileSrc = profileUrl
+  ? profileUrl
   : "https://ui-avatars.com/api/?name=" +
       encodeURIComponent(req.session.user.full_name || "User") +
       "&background=009688&color=fff&size=96&rounded=true";
+
 
 
 
