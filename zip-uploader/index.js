@@ -150,7 +150,7 @@ app.post("/login", async (req, res) => {
   try {
     const { data: users, error } = await supabase
       .from("users")
-      .select("id, username, full_name, password_hash, user_type") // ✅ fetch role
+      .select("id, username, full_name, password_hash, user_type, profile_photo") // ✅ fetch role
       .eq("username", username)
       .limit(1);
 
@@ -169,7 +169,8 @@ app.post("/login", async (req, res) => {
       id: user.id,
       username: user.username,
       full_name: user.full_name,
-      role: user.user_type ? user.user_type : "user", // ✅ respect role from DB
+      role: user.user_type ? user.user_type : "user",
+      profile_photo: user.profile_photo || null// ✅ respect role from DB
     };
 
     res.redirect("/");
