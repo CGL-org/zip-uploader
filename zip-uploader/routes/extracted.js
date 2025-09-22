@@ -19,6 +19,13 @@ router.get("/", async (req, res) => {
     const { data, error } = await supabase.storage.from(EXTRACTED_BUCKET).list("");
     if (error) throw error;
 
+      const profileSrc =
+    req.session.user.profile_url ||
+    "https://ui-avatars.com/api/?name=" +
+      encodeURIComponent(req.session.user.full_name || "User") +
+      "&background=009688&color=fff&size=96&rounded=true";
+
+    
     res.send(`
 <html>
 <head>
