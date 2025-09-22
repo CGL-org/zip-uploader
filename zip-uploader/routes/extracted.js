@@ -84,7 +84,6 @@ router.get("/", async (req, res) => {
   <div id="menuBtn">☰ Menu</div>
   <div id="sidebar" class="sidebar">
     <a href="/">🏠 Dashboard</a>
-    <a href="/extracted">📂 Extracted Files</a>
     <a href="/done">✅ Check and Complete</a>
     <a href="/logout">🚪 Logout</a>
   </div>
