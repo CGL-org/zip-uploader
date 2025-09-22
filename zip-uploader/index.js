@@ -164,7 +164,6 @@ app.get("/", requireLogin, async (req, res) => {
 
     // sidebar links depending on role
     const sidebarLinks = `
-      <a href="/">🏠 Dashboard</a>
       <a href="/extracted">📂 Extracted Files</a>
       <a href="/done">✅ Check and Completed</a>
       ${isAdmin ? `<a href="/account">👥 Accounts</a>` : ""}
