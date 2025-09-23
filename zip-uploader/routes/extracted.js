@@ -190,7 +190,7 @@ document.getElementById("imgModalBg").addEventListener("click", () => {
 
       document.getElementById('imageSection').innerHTML = images.length 
         ? '<div class="section-title">🖼 Images</div><div class="image-grid">' 
-            + images.map(f => `<img src="${f.publicUrl}" alt="${f.name}" onclick="openImage('${f.publicUrl}')">`).join('') 
+            + images.map(f => `<img src="${f.publicUrl}" alt="${f.name}" onclick="openImage(&quot;${f.publicUrl}&quot;)">`).join('') 
             + '</div>' 
         : "";
 
