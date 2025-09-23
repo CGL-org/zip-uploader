@@ -31,6 +31,30 @@ router.get("/", async (req, res) => {
     const { data, error } = await supabase.storage.from(EXTRACTED_BUCKET).list("");
     if (error) throw error;
 
+    // Build table rows separately
+    const rows = await Promise.all(data.map(async f => {
+      let extractedAt = "N/A";
+      try {
+        const { data: meta } = await supabase.storage
+          .from(EXTRACTED_BUCKET)
+          .download(`${f.name}/.extracted.json`);
+        if (meta) {
+          const text = await meta.text();
+          const json = JSON.parse(text);
+          extractedAt = json.extractedAt || "N/A";
+        }
+      } catch (e) {
+        console.warn("meta read failed", f.name, e.message);
+      }
+
+      return `
+        <tr>
+          <td data-label="Folder">${f.name}</td>
+          <td data-label="Date Extracted">${extractedAt}</td>
+          <td data-label="Action"><button onclick="openFolder('${f.name}')">View</button></td>
+        </tr>`;
+    }));
+
     res.send(`
 <html>
 <head>
@@ -112,31 +136,9 @@ router.get("/", async (req, res) => {
     <h2>Available Folders</h2>
     <table>
       <thead><tr><th>Folder</th><th>Date Extracted</th><th>Action</th></tr></thead>
-      <tbody>
-${await Promise.all(data.map(async f => {
-  let extractedAt = "N/A";
-  try {
-    const { data: meta } = await supabase.storage
-      .from(EXTRACTED_BUCKET)
-      .download(`${f.name}/.extracted.json`);
-    if (meta) {
-      const text = await meta.text();
-      const json = JSON.parse(text);
-      extractedAt = json.extractedAt || "N/A";
-    }
-  } catch (e) {
-    console.warn("meta read failed", f.name, e.message);
-  }
-
-  return `
-  <tr>
-    <td data-label="Folder">${f.name}</td>
-    <td data-label="Date Extracted">${extractedAt}</td>
-    <td data-label="Action"><button onclick="openFolder('${f.name}')">View</button></td>
-  </tr>`;
-})).then(rows => rows.join(""))}
-
-      </tbody>
+<tbody>
+  ${rows.join("")}
+</tbody>
     </table>
   </div>
 
