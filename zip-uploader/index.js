@@ -304,7 +304,7 @@ app.get("/", requireLogin, async (req, res) => {
       </style>
     </head>
     <body>
-      <header>🏠 Dashboard (${req.session.user.role})</header>
+      <header>🏠 Bottle Scanner Admin Portal</header>
 
       <button id="menuBtn" aria-label="Toggle menu">☰ Menu</button>
 
