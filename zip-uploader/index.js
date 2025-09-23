@@ -371,7 +371,7 @@ if (isAdmin) {
 
       <main class="content" id="mainContent">
         <div class="panel">
-          <h2>📂 File Management Portal</h2>
+          <h2>📂 File Management (Dashboard)</h2>
 
           <!-- Info boxes -->
           <div class="info-grid" aria-hidden="false">
@@ -398,7 +398,7 @@ if (isAdmin) {
           </div>
 
           <!-- existing Stored Files table (keeps original behavior) -->
-          <h3>📦 Stored Files (Bucket: ${BUCKET})</h3>
+          <h3>📦 Received Files</h3>
           <table>
             <thead>
               <input id="storefileSearch" class="search" type="search" placeholder="🔎 Live search across all columns (type to filter)">
