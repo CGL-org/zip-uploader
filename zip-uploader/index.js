@@ -399,9 +399,9 @@ if (isAdmin) {
 
           <!-- existing Stored Files table (keeps original behavior) -->
           <h3>📦 Received Files</h3>
-          <table>
+          <input id="storefileSearch" class="search" type="search" placeholder="🔎 type to filter">
+          <table id="storefileTable">
             <thead>
-              <input id="storefileSearch" class="search" type="search" placeholder="🔎 Live search across all columns (type to filter)">
               <tr><th>Name</th><th>Type</th><th>Size</th><th>Last Modified</th><th>Action</th></tr>
             </thead>
             <tbody>
@@ -424,8 +424,8 @@ if (isAdmin) {
 
 
 
-          <div style="overflow:auto;">
-            <table id="storefileTable">
+         
+      
 <tbody>
   ${storefileRows.length > 0
     ? storefileRows.map(r => {
