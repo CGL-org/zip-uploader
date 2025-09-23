@@ -511,10 +511,22 @@ app.get("/extract/:fileName", requireLogin, async (req, res) => {
 
     await supabase.storage.from(BUCKET).remove([fileName]);
 
+function formatDateTime() {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  const hh = String(now.getHours()).padStart(2, "0");
+  const mi = String(now.getMinutes()).padStart(2, "0");
+  const ss = String(now.getSeconds()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
+}
+
+    
     const metaFilePath = `${zipBase}/.extracted.json`;
     await supabase.storage.from(EXTRACTED_BUCKET).upload(
       metaFilePath,
-      Buffer.from(JSON.stringify({ extractedAt: new Date().toISOString() })),
+      Buffer.from(JSON.stringify({ extractedAt: formatDateTime() })),
       { upsert: true, contentType: "application/json" }
     );
 
