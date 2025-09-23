@@ -188,11 +188,18 @@ document.getElementById("imgModalBg").addEventListener("click", () => {
       const images = data.files.filter(f => imageExts.some(ext => f.name.toLowerCase().endsWith(ext)));
       const others = data.files.filter(f => !imageExts.some(ext => f.name.toLowerCase().endsWith(ext)));
 
-      document.getElementById('imageSection').innerHTML = images.length 
-        ? '<div class="section-title">🖼 Images</div><div class="image-grid">' 
-            + images.map(f => `<img src="${f.publicUrl}" alt="${f.name}" onclick='openImage("${f.publicUrl}")'>`).join('') 
-            + '</div>' 
-        : "";
+   document.getElementById('imageSection').innerHTML = images.length 
+  ? '<div class="section-title">🖼 Images</div><div class="image-grid">' 
+      + images.map(f => 
+          `<img src="${f.publicUrl}" alt="${f.name}" class="preview-img" data-url="${f.publicUrl}">`
+        ).join('') 
+      + '</div>' 
+  : "";
+
+// Attach click handlers safely
+document.querySelectorAll('.preview-img').forEach(img => {
+  img.addEventListener('click', () => openImage(img.dataset.url));
+});
 
 
       document.getElementById('fileSection').innerHTML = others.length ? '<div class="section-title">📄 Files</div><ul class="file-list">' + others.map(f => '<li><a href="'+f.publicUrl+'" target="_blank">'+f.name+'</a></li>').join('') + '</ul>' : "";
