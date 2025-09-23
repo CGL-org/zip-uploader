@@ -387,6 +387,7 @@ app.get("/", requireLogin, async (req, res) => {
           <h3>📦 Stored Files (Bucket: ${BUCKET})</h3>
           <table>
             <thead>
+              <input id="storefileSearch" class="search" type="search" placeholder="🔎 Live search across all columns (type to filter)">
               <tr><th>Name</th><th>Type</th><th>Size</th><th>Last Modified</th><th>Action</th></tr>
             </thead>
             <tbody>
@@ -406,16 +407,11 @@ app.get("/", requireLogin, async (req, res) => {
 
         <!-- New searchable storefile DB table -->
         <div class="panel">
-          <h3>🗂 Storefile Records</h3>
-          <input id="storefileSearch" class="search" type="search" placeholder="🔎 Live search across all columns (type to filter)">
+
+
 
           <div style="overflow:auto;">
             <table id="storefileTable">
-              <thead>
-                <tr>
-                  ${storefileHead.length > 0 ? storefileHead.map(h => `<th>${h}</th>`).join('') : '<th>No storefile fields</th>'}
-                </tr>
-              </thead>
               <tbody>
                 ${storefileRows.length > 0 ? storefileRows.map(r => {
                   const cells = Object.values(r).map(v => {
@@ -429,7 +425,7 @@ app.get("/", requireLogin, async (req, res) => {
                     return `<td>${val}</td>`;
                   }).join("");
                   return `<tr>${cells}</tr>`;
-                }).join("") : `<tr><td colspan="${storefileHead.length || 1}">No records found</td></tr>`}
+                }).join("")}
               </tbody>
             </table>
           </div>
