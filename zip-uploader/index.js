@@ -412,21 +412,22 @@ app.get("/", requireLogin, async (req, res) => {
 
           <div style="overflow:auto;">
             <table id="storefileTable">
-              <tbody>
-                ${storefileRows.length > 0 ? storefileRows.map(r => {
-                  const cells = Object.values(r).map(v => {
-                    let val = "";
-                    if (v === null || v === undefined) val = "";
-                    else if (typeof v === "object") {
-                      try { val = JSON.stringify(v); } catch (e) { val = String(v); }
-                    } else val = String(v);
-                    // escape closing tags just in case
-                    val = val.replace && val.replace(/</g, "&lt;");
-                    return `<td>${val}</td>`;
-                  }).join("");
-                  return `<tr>${cells}</tr>`;
-                }).join("")}
-              </tbody>
+<tbody>
+  ${storefileRows.length > 0
+    ? storefileRows.map(r => {
+        const cells = Object.values(r).map(v => {
+          let val = "";
+          if (v === null || v === undefined) val = "";
+          else if (typeof v === "object") {
+            try { val = JSON.stringify(v); } catch (e) { val = String(v); }
+          } else val = String(v);
+          val = val.replace && val.replace(/</g, "&lt;");
+          return `<td>${val}</td>`;
+        }).join("");
+        return `<tr>${cells}</tr>`;
+      }).join("")
+    : ""}
+</tbody>
             </table>
           </div>
         </div>
