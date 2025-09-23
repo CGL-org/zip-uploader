@@ -52,7 +52,7 @@ app.use(
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// File list
+// File list (storage bucket)
 async function getFileList() {
   const { data, error } = await supabase.storage.from(BUCKET).list("", { limit: 1000 });
   if (error) throw new Error(error.message);
@@ -158,8 +158,65 @@ app.get("/logout", (req, res) => {
 // ---------- DASHBOARD ----------
 app.get("/", requireLogin, async (req, res) => {
   try {
+    // get files from storage bucket (existing behavior)
     const files = await getFileList();
     const isAdmin = req.session.user.role === "admin";
+
+    // --- New: counts from DB.storefile by status ---
+    // NOTE: counts use exact table name 'storefile' and status values as you provided.
+    let receiveCount = 0, extractedCount = 0, completedCount = 0, usersCount = 0;
+    try {
+      const r1 = await supabase
+        .from("storefile")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "recieve_files");
+      receiveCount = r1?.count || 0;
+    } catch (e) { console.warn("count recieve_files err", e.message); }
+
+    try {
+      const r2 = await supabase
+        .from("storefile")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "extracted_files");
+      extractedCount = r2?.count || 0;
+    } catch (e) { console.warn("count extracted_files err", e.message); }
+
+    try {
+      const r3 = await supabase
+        .from("storefile")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "completed");
+      completedCount = r3?.count || 0;
+    } catch (e) { console.warn("count completed err", e.message); }
+
+    if (isAdmin) {
+      try {
+        const ru = await supabase
+          .from("users")
+          .select("*", { count: "exact", head: true });
+        usersCount = ru?.count || 0;
+      } catch (e) { console.warn("count users err", e.message); }
+    }
+
+    // --- New: fetch storefile rows for searchable table ---
+    let storefileRows = [];
+    try {
+      const { data: sfdata, error: sferr } = await supabase
+        .from("storefile")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (sferr) throw sferr;
+      storefileRows = sfdata || [];
+    } catch (e) {
+      console.warn("fetch storefile rows err", e.message);
+      storefileRows = [];
+    }
+
+    // safe fallback for profile (use a small placeholder if missing)
+    const profileSrc = req.session.user.profile_photo
+      ? req.session.user.profile_photo
+      : "https://via.placeholder.com/150?text=Profile";
+
     const sidebarLinks = `
       <a href="/">🏠 Dashboard</a>
       <a href="/extracted">📂 Extracted Files</a>
@@ -168,11 +225,9 @@ app.get("/", requireLogin, async (req, res) => {
       <a href="/logout">🚪 Logout</a>
     `;
 
-    // safe fallback for profile (use a small placeholder if missing)
-    const profileSrc = req.session.user.profile_photo
-      ? req.session.user.profile_photo
-      : "https://via.placeholder.com/150?text=Profile";
-
+    // Build storefile table header based on keys (if rows exist)
+    const storefileHead = storefileRows.length > 0 ? Object.keys(storefileRows[0]) : [];
+    // Render page
     res.send(`
     <!doctype html>
     <html>
@@ -181,18 +236,17 @@ app.get("/", requireLogin, async (req, res) => {
       <meta name="viewport" content="width=device-width,initial-scale=1" />
       <title>Dashboard</title>
       <style>
-        :root { --sidebar-w: 240px; --brand:#004d40; --accent:#009688; }
+        :root { --sidebar-w: 240px; --brand:#004d40; --accent:#009688; --bg:#f4f6f9; }
         * { box-sizing: border-box; }
-
-        body { margin:0; font-family: 'Segoe UI', Roboto, Arial, sans-serif; background:#f4f6f9; color:#222; }
+        body { margin:0; font-family: 'Segoe UI', Roboto, Arial, sans-serif; background:var(--bg); color:#222; }
         header { background:var(--brand); color:white; padding:15px; text-align:center; font-size:1.25rem; position:fixed; left:0; right:0; top:0; z-index:900; }
-        main { padding: 80px 24px 24px 24px; transition: margin-left .3s ease; }
+        main { padding: 100px 24px 24px 24px; transition: margin-left .3s ease; }
 
         /* Sidebar */
         .sidebar {
           position:fixed;
           top:0;
-          left: calc(-1 * var(--sidebar-w)); /* ✅ hide sidebar initially */
+          left: calc(-1 * var(--sidebar-w)); /* hide sidebar initially */
           width:var(--sidebar-w);
           height:100vh;
           background:var(--brand);
@@ -206,7 +260,6 @@ app.get("/", requireLogin, async (req, res) => {
 
         .sidebar.active { left: 0; }
 
-        /* Profile block */
         .sidebar .profile {
           text-align:center;
           padding:20px 14px;
@@ -214,53 +267,21 @@ app.get("/", requireLogin, async (req, res) => {
           background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
         }
 
-        /* inline width/height attributes on the <img> ensure the browser reserves space immediately */
         .sidebar .profile img {
-          width: 96px;      /* fixed visual size */
-          height: 96px;
-          max-width: 96px;
-          max-height: 96px;
-          border-radius: 50%;
-          object-fit: cover;
+          width: 96px; height: 96px; border-radius: 50%; object-fit: cover;
           border: 3px solid rgba(255,255,255,0.18);
-          display:block;
-          margin:0 auto 10px;
-          background: #fff; /* placeholder bg while image loads */
+          display:block; margin:0 auto 10px;
         }
 
-        .sidebar .profile h3 {
-          margin:6px 0 2px;
-          font-size: 1rem;
-          color:#fff;
-          line-height:1.1;
-          font-weight:600;
-        }
-        .sidebar .profile p {
-          margin:0;
-          color:rgba(255,255,255,0.8);
-          font-size:0.85rem;
-        }
+        .sidebar .profile h3 { margin:6px 0 2px; font-size: 1rem; color:#fff; font-weight:600; }
+        .sidebar .profile p { margin:0; color:rgba(255,255,255,0.8); font-size:0.85rem; }
 
-        /* Menu area */
-        .sidebar .menu {
-          padding:16px 8px;
-        }
+        .sidebar .menu { padding:16px 8px; }
         .sidebar .menu a {
-          display:flex;
-          align-items:center;
-          gap:10px;
-          padding:10px 14px;
-          color: #fff;
-          text-decoration:none;
-          border-radius:8px;
-          margin:8px 8px;
-          transition: background .15s ease, transform .08s ease;
-          font-weight:500;
+          display:flex; align-items:center; gap:10px; padding:10px 14px; color: #fff;
+          text-decoration:none; border-radius:8px; margin:8px 8px; transition: background .15s ease, transform .08s ease; font-weight:500;
         }
-        .sidebar .menu a:hover {
-          background: rgba(255,255,255,0.05);
-          transform: translateX(4px);
-        }
+        .sidebar .menu a:hover { background: rgba(255,255,255,0.05); transform: translateX(4px); }
 
         /* Menu button */
         #menuBtn {
@@ -278,27 +299,35 @@ app.get("/", requireLogin, async (req, res) => {
         }
 
         /* Content (table area) */
-        .content {
-          transition: margin-left .28s ease;
-          margin-left: 0;
-        }
+        .content { transition: margin-left .28s ease; margin-left: 0; }
         .content.shifted { margin-left: var(--sidebar-w); }
 
-        /* Table styling */
-        .panel {
-          background: #fff;
-          padding: 18px;
-          border-radius: 10px;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        .panel { background: #fff; padding: 18px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); margin-bottom:18px; }
+
+        /* Info boxes */
+        .info-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:16px; margin-bottom:18px; align-items:stretch; }
+        .info-card {
+          padding:18px; border-radius:12px; color:#fff; display:flex; flex-direction:column; justify-content:center; align-items:flex-start;
+          box-shadow:0 6px 18px rgba(0,0,0,0.06); min-height:86px;
         }
+        .info-card .label { font-size:0.9rem; opacity:0.9; }
+        .info-card .value { font-size:1.8rem; font-weight:700; margin-top:6px; }
+        .info-received { background: linear-gradient(135deg,#00695c,#009688); }
+        .info-extracted { background: linear-gradient(135deg,#1e88e5,#42a5f5); }
+        .info-completed { background: linear-gradient(135deg,#f9a825,#ffca28); color: rgba(0,0,0,0.85); }
+        .info-users { background: linear-gradient(135deg,#8e24aa,#d81b60); }
+
+        /* Table styling */
         table { width:100%; border-collapse:collapse; margin-top: 12px; }
         thead { background: var(--accent); color: #fff; border-radius:6px; }
-        th, td { padding:12px; text-align:center; border-bottom:1px solid #eee; }
+        th, td { padding:10px; text-align:center; border-bottom:1px solid #eee; word-break:break-word; }
+        tbody tr:nth-child(even) { background:#fafafa; }
 
-        /* small screens */
+        .search { width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; margin-bottom:10px; }
+
         @media (max-width:720px) {
           :root { --sidebar-w: 200px; }
-          .sidebar .profile img { width:72px; height:72px; max-width:72px; max-height:72px; }
+          .sidebar .profile img { width:72px; height:72px; }
           #menuBtn { left:12px; top:12px; }
         }
       </style>
@@ -310,7 +339,6 @@ app.get("/", requireLogin, async (req, res) => {
 
       <aside id="sidebar" class="sidebar" aria-label="Sidebar navigation">
         <div class="profile" role="region" aria-label="User profile">
-          <!-- inline size attributes + style ensure immediate layout, CSS refines styling -->
           <img
             src="${profileSrc}"
             alt="Profile"
@@ -329,7 +357,34 @@ app.get("/", requireLogin, async (req, res) => {
 
       <main class="content" id="mainContent">
         <div class="panel">
-          <h2>📦 Stored Files</h2>
+          <h2>📂 File Management Portal</h2>
+
+          <!-- Info boxes -->
+          <div class="info-grid" aria-hidden="false">
+            <div class="info-card info-received" title="Received Files">
+              <div class="label">📥 Received Files</div>
+              <div class="value">${receiveCount ?? 0}</div>
+            </div>
+
+            <div class="info-card info-extracted" title="Extracted Files">
+              <div class="label">📂 Extracted Files</div>
+              <div class="value">${extractedCount ?? 0}</div>
+            </div>
+
+            <div class="info-card info-completed" title="Completed">
+              <div class="label">✅ Completed</div>
+              <div class="value">${completedCount ?? 0}</div>
+            </div>
+
+            ${isAdmin ? `
+              <div class="info-card info-users" title="Users (admins only)">
+                <div class="label">👥 Users</div>
+                <div class="value">${usersCount ?? 0}</div>
+              </div>` : ''}
+          </div>
+
+          <!-- existing Stored Files table (keeps original behavior) -->
+          <h3>📦 Stored Files (Bucket: ${BUCKET})</h3>
           <table>
             <thead>
               <tr><th>Name</th><th>Type</th><th>Size</th><th>Last Modified</th><th>Action</th></tr>
@@ -348,6 +403,38 @@ app.get("/", requireLogin, async (req, res) => {
             </tbody>
           </table>
         </div>
+
+        <!-- New searchable storefile DB table -->
+        <div class="panel">
+          <h3>🗂 Storefile Records</h3>
+          <input id="storefileSearch" class="search" type="search" placeholder="🔎 Live search across all columns (type to filter)">
+
+          <div style="overflow:auto;">
+            <table id="storefileTable">
+              <thead>
+                <tr>
+                  ${storefileHead.length > 0 ? storefileHead.map(h => `<th>${h}</th>`).join('') : '<th>No storefile fields</th>'}
+                </tr>
+              </thead>
+              <tbody>
+                ${storefileRows.length > 0 ? storefileRows.map(r => {
+                  const cells = Object.values(r).map(v => {
+                    let val = "";
+                    if (v === null || v === undefined) val = "";
+                    else if (typeof v === "object") {
+                      try { val = JSON.stringify(v); } catch (e) { val = String(v); }
+                    } else val = String(v);
+                    // escape closing tags just in case
+                    val = val.replace && val.replace(/</g, "&lt;");
+                    return `<td>${val}</td>`;
+                  }).join("");
+                  return `<tr>${cells}</tr>`;
+                }).join("") : `<tr><td colspan="${storefileHead.length || 1}">No records found</td></tr>`}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </main>
 
       <script>
@@ -368,6 +455,19 @@ app.get("/", requireLogin, async (req, res) => {
               mainContent.classList.remove("shifted");
             }
           });
+
+          // Live search for storefile table
+          const searchInput = document.getElementById('storefileSearch');
+          if (searchInput) {
+            searchInput.addEventListener('input', function() {
+              const filter = this.value.toLowerCase();
+              const rows = document.querySelectorAll('#storefileTable tbody tr');
+              rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(filter) ? "" : "none";
+              });
+            });
+          }
         })();
       </script>
     </body>
