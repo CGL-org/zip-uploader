@@ -401,7 +401,7 @@ app.use("/done", requireLogin, doneRoutes);
 app.use("/account", requireLogin, accountRoutes);
 
 // Start server
-app.listen(PORT, () => console.log(\`Server running on http://localhost:\${PORT}\`));
+app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
 
 // ---- helper (server-side) ----
 function escapeHtml(str) {
