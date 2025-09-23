@@ -1,7 +1,7 @@
 // index.js
 import express from "express";
 import session from "express-session";
-import bcrypt from "bcryptjs";
+import bcrypt from "bcrypt";
 import multer from "multer";
 import AdmZip from "adm-zip";
 import path from "path";
@@ -128,13 +128,16 @@ app.get("/login", (req, res) => {
 app.post("/login", async (req, res) => {
   const { username, password } = req.body;
   try {
-    const { data: users, error } = await supabase.from("users").select("*").eq("username", username).single();
-    if (error || !users) return res.status(401).send("Invalid credentials");
+    const { data: user, error } = await supabase.from("users").select("*").eq("username", username).single();
+    if (error || !user) return res.status(401).send("Invalid credentials");
 
-    const valid = await bcrypt.compare(password, users.password);
+    const valid = await bcrypt.compare(password, user.password || user.password_hash || "");
     if (!valid) return res.status(401).send("Invalid credentials");
 
-    req.session.user = users;
+    // store the user row in session (strip password fields)
+    delete user.password;
+    delete user.password_hash;
+    req.session.user = user;
     res.redirect("/");
   } catch (err) {
     res.status(500).send("Error: " + err.message);
@@ -151,16 +154,17 @@ app.get("/", requireLogin, async (req, res) => {
   try {
     const { user } = req.session;
 
-    // ✅ Count files by status (using exact status strings you confirmed)
+    // ✅ Count files by status (using exact status strings)
+    // Using destructured response to capture count safely
     let receiveCount = 0, extractedCount = 0, completedCount = 0;
     try {
-      const r = await supabase
+      const r1 = await supabase
         .from("storefile")
         .select("*", { count: "exact", head: true })
         .eq("status", "Receive_Files");
-      receiveCount = Number(r?.count || 0);
+      receiveCount = (r1 && r1.count) ? r1.count : 0;
     } catch (e) {
-      console.warn("count Receive_Files error:", e.message || e);
+      console.warn("count Receive_Files err", e.message || e);
       receiveCount = 0;
     }
 
@@ -169,9 +173,9 @@ app.get("/", requireLogin, async (req, res) => {
         .from("storefile")
         .select("*", { count: "exact", head: true })
         .eq("status", "Extracted_Files");
-      extractedCount = Number(r2?.count || 0);
+      extractedCount = (r2 && r2.count) ? r2.count : 0;
     } catch (e) {
-      console.warn("count Extracted_Files error:", e.message || e);
+      console.warn("count Extracted_Files err", e.message || e);
       extractedCount = 0;
     }
 
@@ -180,31 +184,31 @@ app.get("/", requireLogin, async (req, res) => {
         .from("storefile")
         .select("*", { count: "exact", head: true })
         .eq("status", "Completed");
-      completedCount = Number(r3?.count || 0);
+      completedCount = (r3 && r3.count) ? r3.count : 0;
     } catch (e) {
-      console.warn("count Completed error:", e.message || e);
+      console.warn("count Completed err", e.message || e);
       completedCount = 0;
     }
 
-    // Users count if admin (support both user_type or admin username)
+    // Users count only when admin
     let usersCount = 0;
-    const isAdmin = (user && (user.user_type === "admin" || user.username === "admin"));
+    const isAdmin = (user && (user.user_type === "admin" || user.username === "admin" || user.role === "admin"));
     if (isAdmin) {
       try {
         const ru = await supabase.from("users").select("*", { count: "exact", head: true });
-        usersCount = Number(ru?.count || 0);
+        usersCount = (ru && ru.count) ? ru.count : 0;
       } catch (e) {
-        console.warn("count users error:", e.message || e);
+        console.warn("count users err", e.message || e);
         usersCount = 0;
       }
     }
 
-    // Fetch stored files (rows from storefile table)
+    // Fetch stored files to show in the table
     let files = [];
     try {
-      const { data: sfdata, error: sferr } = await supabase.from("storefile").select("*").order("created_at", { ascending: false });
-      if (sferr) throw sferr;
-      files = sfdata || [];
+      const { data: filesData, error: filesErr } = await supabase.from("storefile").select("*").order("created_at", { ascending: false });
+      if (filesErr) throw filesErr;
+      files = filesData || [];
     } catch (e) {
       console.warn("fetch storefile rows err", e.message || e);
       files = [];
@@ -216,7 +220,7 @@ app.get("/", requireLogin, async (req, res) => {
         <title>Dashboard</title>
         <style>
           body { margin:0; font-family: Arial; background:#f4f6f9; }
-          header { background:#004d40; color:white; padding:15px; text-align:center; font-size:1.5em; position:sticky; top:0; z-index:100; }
+          header { background:#004d40; color:white; padding:15px; text-align:center; font-size:1.5em; }
           .sidebar { position:fixed; top:0; left:-220px; width:200px; height:100%; background:#004d40; color:white; padding-top:60px; transition:0.3s; }
           .sidebar.active { left:0; }
           .sidebar a { display:block; padding:14px 18px; color:white; text-decoration:none; font-weight:500; transition:0.2s; }
@@ -227,13 +231,14 @@ app.get("/", requireLogin, async (req, res) => {
 
           /* Info boxes */
           .info-boxes { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:20px; margin-bottom:20px; }
-          .info-card { padding:18px; border-radius:12px; color:#fff; box-shadow:0 6px 18px rgba(0,0,0,0.06); min-height:86px; display:flex; flex-direction:column; justify-content:center; }
-          .ic-receive { background: linear-gradient(135deg,#00695c,#009688); }
-          .ic-extracted { background: linear-gradient(135deg,#1e88e5,#42a5f5); }
-          .ic-completed { background: linear-gradient(135deg,#f9a825,#ffca28); color:rgba(0,0,0,0.85); }
-          .ic-users { background: linear-gradient(135deg,#8e24aa,#d81b60); }
-          .info-card .label { font-size:0.95rem; opacity:0.95; }
-          .info-card .value { font-size:1.9rem; font-weight:700; margin-top:6px; }
+          .info-card { padding:20px; border-radius:12px; color:#fff; box-shadow:0 2px 6px rgba(0,0,0,0.15); text-align:left; }
+          .info-card h3 { margin:0; font-size:1rem; opacity:0.9; }
+          .info-card p { margin:8px 0 0; font-size:1.6rem; font-weight:700; }
+
+          .card-receive { background: linear-gradient(135deg,#00695c,#009688); }
+          .card-extracted { background: linear-gradient(135deg,#1e88e5,#42a5f5); }
+          .card-completed { background: linear-gradient(135deg,#f9a825,#ffca28); color:rgba(0,0,0,0.85); }
+          .card-users { background: linear-gradient(135deg,#8e24aa,#d81b60); }
 
           /* Table */
           table { width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-top:10px; }
@@ -251,8 +256,8 @@ app.get("/", requireLogin, async (req, res) => {
             box-sizing: border-box;
           }
 
-          @media(max-width:768px){
-            .info-boxes { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+          @media (max-width:720px){
+            .info-boxes { grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); }
           }
         </style>
       </head>
@@ -266,75 +271,63 @@ app.get("/", requireLogin, async (req, res) => {
           <a href="/account">👤 Account</a>
           <a href="/logout">🚪 Logout</a>
         </div>
+
         <div class="content" id="mainContent">
-          <div class="info-boxes">
-            <div class="info-card ic-receive">
-              <div class="label">📥 Received Files</div>
-              <div class="value">${receiveCount}</div>
-            </div>
-            <div class="info-card ic-extracted">
-              <div class="label">📂 Extracted Files</div>
-              <div class="value">${extractedCount}</div>
-            </div>
-            <div class="info-card ic-completed">
-              <div class="label">✅ Completed</div>
-              <div class="value">${completedCount}</div>
-            </div>
-            ${isAdmin ? `<div class="info-card ic-users"><div class="label">👥 Users</div><div class="value">${usersCount}</div></div>` : ""}
+          <div class="info-boxes" role="region" aria-label="Stats">
+            <div class="info-card card-receive"><h3>📥 Received Files</h3><p id="rcount">${receiveCount ?? 0}</p></div>
+            <div class="info-card card-extracted"><h3>📂 Extracted Files</h3><p id="ecount">${extractedCount ?? 0}</p></div>
+            <div class="info-card card-completed"><h3>✅ Completed</h3><p id="ccount">${completedCount ?? 0}</p></div>
+            ${isAdmin ? `<div class="info-card card-users"><h3>👥 Users</h3><p id="ucount">${usersCount ?? 0}</p></div>` : ''}
           </div>
 
           <h2>📁 Stored Files</h2>
-
-          <!-- Search input placed above the file table (live search) -->
+          <!-- SEARCH BAR (above the table) -->
           <input type="text" id="searchInput" placeholder="🔍 Live search across all columns (type to filter)">
 
-          <table id="fileTable">
+          <table id="fileTable" aria-describedby="searchInput">
             <thead>
               <tr><th>File Name</th><th>Status</th><th>Uploaded At</th><th>Action</th></tr>
             </thead>
             <tbody>
-              ${files
-                .map(
-                  (f) => `
+              ${files.map(f => `
                 <tr>
-                  <td>${escapeHtml(String(f.filename || ""))}</td>
+                  <td>${escapeHtml(String(f.filename || f.name || ""))}</td>
                   <td>${escapeHtml(String(f.status || ""))}</td>
-                  <td>${escapeHtml(String(f.created_at || ""))}</td>
-                  <td><a href="/extract/${encodeURIComponent(String(f.filename || ""))}">Extract</a></td>
-                </tr>`
-                )
-                .join("")}
+                  <td>${escapeHtml(String(f.created_at || f.updated_at || ""))}</td>
+                  <td>${(String(f.filename || f.name || "").endsWith(".zip")) ? `<a href="/extract/${encodeURIComponent(f.filename || f.name)}">Extract</a>` : "-"}</td>
+                </tr>
+              `).join("")}
             </tbody>
           </table>
         </div>
 
         <script>
-          // simple escape helper used on client-side rendering (table text is already escaped server-side)
-          (function() {
-            const menuBtn = document.getElementById("menuBtn");
-            const sidebar = document.getElementById("sidebar");
-            const content = document.getElementById("mainContent");
-            menuBtn.addEventListener("click", () => {
-              const isOpen = sidebar.classList.contains("active");
-              sidebar.classList.toggle("active", !isOpen);
-              content.classList.toggle("active", !isOpen);
-            });
+          // small helper to escape textContent when building rows client-side (not strictly necessary here)
+          function escapeHtml(text) {
+            return text.replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]; });
+          }
 
-            // Live search on the single table
-            const searchInput = document.getElementById("searchInput");
+          const menuBtn = document.getElementById("menuBtn");
+          const sidebar = document.getElementById("sidebar");
+          const content = document.getElementById("mainContent");
+          menuBtn.addEventListener("click", () => {
+            const isOpen = sidebar.classList.contains("active");
+            sidebar.classList.toggle("active", !isOpen);
+            content.classList.toggle("active", !isOpen);
+          });
+
+          // Live search (filters all columns)
+          const searchInput = document.getElementById("searchInput");
+          if (searchInput) {
             searchInput.addEventListener("input", function() {
-              const q = this.value.trim().toLowerCase();
+              const filter = this.value.trim().toLowerCase();
               const rows = document.querySelectorAll("#fileTable tbody tr");
-              if (!q) {
-                rows.forEach(r => r.style.display = "");
-                return;
-              }
-              rows.forEach(r => {
-                const text = r.innerText.toLowerCase();
-                r.style.display = text.includes(q) ? "" : "none";
+              rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = filter === "" ? "" : (text.indexOf(filter) > -1 ? "" : "none");
               });
             });
-          })();
+          }
         </script>
       </body>
       </html>
@@ -401,10 +394,11 @@ app.use("/done", requireLogin, doneRoutes);
 app.use("/account", requireLogin, accountRoutes);
 
 // Start server
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`Server running on http://localhost:\${PORT}`));
 
-// ---- helper (server-side) ----
+// ----------------- Utility (server-side escaping) -----------------
 function escapeHtml(str) {
+  if (!str) return "";
   return String(str)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
