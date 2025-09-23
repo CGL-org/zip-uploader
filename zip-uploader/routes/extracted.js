@@ -93,19 +93,29 @@ router.get("/", async (req, res) => {
     <table>
       <thead><tr><th>Folder</th><th>Date Extracted</th><th>Action</th></tr></thead>
       <tbody>
-        ${await Promise.all(data.map(async f => {
-          let extractedAt = "N/A";
-          const { data: meta } = await supabase.storage.from(DONE_BUCKET).download(`${f.name}/.completed.json`);
-          if (meta) {
-            try { extractedAt = JSON.parse(await meta.text()).extractedAt; } catch {}
-          }
-          return `
-          <tr>
-            <td data-label="Folder">${f.name}</td>
-            <td data-label="Date Extracted">${extractedAt}</td>
-            <td data-label="Action"><button onclick="openFolder('${f.name}')">View</button></td>
-          </tr>`;
-        })).then(rows => rows.join(""))}
+${await Promise.all(data.map(async f => {
+  let extractedAt = "N/A";
+  try {
+    const { data: meta } = await supabase.storage
+      .from(EXTRACTED_BUCKET)
+      .download(`${f.name}/.extracted.json`);
+    if (meta) {
+      const text = await meta.text();
+      const json = JSON.parse(text);
+      extractedAt = json.extractedAt || "N/A";
+    }
+  } catch (e) {
+    console.warn("meta read failed", f.name, e.message);
+  }
+
+  return `
+  <tr>
+    <td data-label="Folder">${f.name}</td>
+    <td data-label="Date Extracted">${extractedAt}</td>
+    <td data-label="Action"><button onclick="openFolder('${f.name}')">View</button></td>
+  </tr>`;
+})).then(rows => rows.join(""))}
+
       </tbody>
     </table>
   </div>
