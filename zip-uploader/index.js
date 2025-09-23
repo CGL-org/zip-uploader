@@ -164,14 +164,28 @@ app.get("/", requireLogin, async (req, res) => {
 
     // --- New: counts from DB.storefile by status ---
     // NOTE: counts use exact table name 'storefile' and status values as you provided.
-    let receiveCount = 0, extractedCount = 0, completedCount = 0, usersCount = 0;
-    try {
-      const r1 = await supabase
-        .from("storefile")
-        .select("*", { count: "exact", head: true })
-        .eq("status", "Receive_Files");
-      receiveCount = r1?.count || 0;
-    } catch (e) { console.warn("count recieve_files err", e.message); }
+async function countBucket(bucket) {
+  const { data, error } = await supabase.storage.from(bucket).list("", { limit: 1000 });
+  if (error) {
+    console.warn(`count ${bucket} err`, error.message);
+    return 0;
+  }
+  return data ? data.length : 0;
+}
+
+const receiveCount   = await countBucket("Receive_Files");
+const extractedCount = await countBucket("Extracted_Files");
+const completedCount = await countBucket("Completed");
+
+let usersCount = 0;
+if (isAdmin) {
+  try {
+    const ru = await supabase
+      .from("users")
+      .select("*", { count: "exact", head: true });
+    usersCount = ru?.count || 0;
+  } catch (e) { console.warn("count users err", e.message); }
+}
 
     try {
       const r2 = await supabase
