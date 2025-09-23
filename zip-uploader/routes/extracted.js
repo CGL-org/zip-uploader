@@ -13,6 +13,18 @@ const DONE_BUCKET = "Completed";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+function formatDateTime() {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  const hh = String(now.getHours()).padStart(2, "0");
+  const mi = String(now.getMinutes()).padStart(2, "0");
+  const ss = String(now.getSeconds()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
+}
+
+
 // 📂 Extracted files page
 router.get("/", async (req, res) => {
   try {
@@ -80,6 +92,14 @@ router.get("/", async (req, res) => {
   </style>
 </head>
 <body>
+
+<!-- Image Fullscreen Modal -->
+<div class="modal-bg" id="imgModalBg">
+  <div class="modal" style="max-width:95%; max-height:95%; padding:0; background:transparent; box-shadow:none;">
+    <img id="imgPreview" src="" alt="Preview" style="width:100%; height:auto; border-radius:8px;">
+  </div>
+</div>
+
   <header>📂 Extracted Files</header>
   <div id="menuBtn">☰ Menu</div>
   <div id="sidebar" class="sidebar">
@@ -135,6 +155,18 @@ ${await Promise.all(data.map(async f => {
   </div>
 
   <script>
+
+// Image fullscreen preview
+function openImage(src) {
+  const modalBg = document.getElementById("imgModalBg");
+  const img = document.getElementById("imgPreview");
+  img.src = src;
+  modalBg.style.display = "flex";
+}
+document.getElementById("imgModalBg").addEventListener("click", () => {
+  document.getElementById("imgModalBg").style.display = "none";
+});
+  
     const menuBtn = document.getElementById("menuBtn");
     const sidebar = document.getElementById("sidebar");
     const content = document.getElementById("mainContent");
@@ -156,7 +188,12 @@ ${await Promise.all(data.map(async f => {
       const images = data.files.filter(f => imageExts.some(ext => f.name.toLowerCase().endsWith(ext)));
       const others = data.files.filter(f => !imageExts.some(ext => f.name.toLowerCase().endsWith(ext)));
 
-      document.getElementById('imageSection').innerHTML = images.length ? '<div class="section-title">🖼 Images</div><div class="image-grid">' + images.map(f => '<img src="'+f.publicUrl+'" alt="'+f.name+'">').join('') + '</div>' : "";
+      document.getElementById('imageSection').innerHTML = images.length 
+        ? '<div class="section-title">🖼 Images</div><div class="image-grid">' 
+            + images.map(f => `<img src="${f.publicUrl}" alt="${f.name}" onclick="openImage('${f.publicUrl}')">`).join('') 
+            + '</div>' 
+        : "";
+
       document.getElementById('fileSection').innerHTML = others.length ? '<div class="section-title">📄 Files</div><ul class="file-list">' + others.map(f => '<li><a href="'+f.publicUrl+'" target="_blank">'+f.name+'</a></li>').join('') + '</ul>' : "";
 
       document.getElementById('modalBg').style.display = 'flex';
@@ -214,7 +251,11 @@ router.post("/:folder/done", async (req, res) => {
     // ✅ Correct — proper template literal
     await supabase.storage
       .from(DONE_BUCKET)
-      .upload(`${folder}/.completed.json`, JSON.stringify({ completedAt: new Date().toISOString() }), { upsert: true });
+      .upload(
+        `${folder}/.completed.json`,
+        JSON.stringify({ completedAt: formatDateTime() }),
+        { upsert: true }
+      );
 
     // ✅ Correct — map with template literal
     await supabase.storage
