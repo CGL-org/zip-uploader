@@ -169,7 +169,7 @@ app.get("/", requireLogin, async (req, res) => {
       const r1 = await supabase
         .from("storefile")
         .select("*", { count: "exact", head: true })
-        .eq("status", "Recieve_Files");
+        .eq("status", "Receive_Files");
       receiveCount = r1?.count || 0;
     } catch (e) { console.warn("count recieve_files err", e.message); }
 
