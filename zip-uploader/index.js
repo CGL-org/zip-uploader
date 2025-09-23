@@ -1,7 +1,7 @@
 // index.js
 import express from "express";
 import session from "express-session";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import multer from "multer";
 import AdmZip from "adm-zip";
 import path from "path";
