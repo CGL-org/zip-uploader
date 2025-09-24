@@ -128,15 +128,25 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     }
 
     // 👥 Accounts
-    if (type === "accounts" || type === "all") {
-      const { data, error } = await supabase.from("accounts").select("id, full_name, email, role");
-      if (error) throw error;
-      content += `<h2>👥 User Accounts</h2><table><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th></tr>`;
-      data.forEach(acc => {
-        content += `<tr><td>${acc.id}</td><td>${acc.full_name}</td><td>${acc.email}</td><td>${acc.role}</td></tr>`;
-      });
-      content += `</table>`;
-    }
+// 👥 Accounts
+if (type === "accounts" || type === "all") {
+  const { data, error } = await supabase
+    .from("users")
+    .select("id, full_name, username");
+  if (error) throw error;
+  content += `<h2>👥 User Accounts</h2>
+  <table>
+    <tr><th>ID</th><th>Name</th><th>Username</th></tr>`;
+  data.forEach(acc => {
+    content += `<tr>
+      <td>${acc.id}</td>
+      <td>${acc.full_name}</td>
+      <td>${acc.username}</td>
+    </tr>`;
+  });
+  content += `</table>`;
+}
+
 
     if (!content) content = `<p>No data found for ${type} report.</p>`;
 
