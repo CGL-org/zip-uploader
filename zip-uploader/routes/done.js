@@ -16,6 +16,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 router.get("/", async (req, res) => {
   try {
     const { data, error } = await supabase.storage.from(DONE_BUCKET).list("");
+    const isAdmin = req.session.user?.role === "admin";
     if (error) throw error;
 
     const rows = await Promise.all(
@@ -142,6 +143,7 @@ button:hover { background:#00796b; }
   <nav class="menu">
     <a href="/">🏠 Dashboard</a>
     <a href="/extracted">📂 Extracted Files</a>
+    ${isAdmin ? `<a href="/account">👥 Accounts</a>` : ""}
     <a href="/logout">🚪 Logout</a>
   </nav>
 </aside>
