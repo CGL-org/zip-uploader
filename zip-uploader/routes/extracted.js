@@ -96,6 +96,14 @@ header { background:var(--brand); color:white; padding:15px; text-align:center; 
       th { display:none; }
     }
 
+.content .container {
+  max-width: 1200px;   /* optional, limits max width on large screens */
+  margin: 0 auto;      /* centers the container */
+  padding: 20px;       /* spacing from screen edges */
+  box-sizing: border-box;
+}
+
+
 #imageModal { display:none; position:fixed; z-index:3000; padding-top:50px; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.9); }
 #imageModal img { margin:auto; display:block; max-width:90%; max-height:90%; }
 #imageModal span { position:absolute; top:20px; right:35px; color:#fff; font-size:40px; font-weight:bold; cursor:pointer; }
@@ -128,44 +136,47 @@ header { background:var(--brand); color:white; padding:15px; text-align:center; 
 </aside>
 
 <div class="content" id="mainContent">
-  <h2 style="margin-top:80px;">📂 Extracted Folders</h2>
+  <div class="container">
+    <h2 style="margin-top:80px;">📂 Extracted Folders</h2>
 
-  <input type="text" id="searchInput" placeholder="🔍 Type to filter" 
-         style="width:100%; padding:10px 12px; margin-bottom:15px; border-radius:6px; border:1px solid #ccc; font-size:1em; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+    <input type="text" id="searchInput" placeholder="🔍 Type to filter" 
+           style="width:100%; padding:10px 12px; margin-bottom:15px; border-radius:6px; border:1px solid #ccc; font-size:1em; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
 
-  <table>
-    <thead>
-      <tr>
-        <th>Folder</th>
-        <th>Date Extracted</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${await Promise.all(data.map(async f => {
-        let extractedAt = "N/A";
-        try {
-          const { data: meta } = await supabase.storage
-            .from(EXTRACTED_BUCKET)
-            .download(`${f.name}/.extracted.json`);
-          if (meta) {
-            const text = await meta.text();
-            const json = JSON.parse(text);
-            extractedAt = json.extractedAt || "N/A";
-          }
-        } catch {}
-        return `
+    <table>
+      <thead>
         <tr>
-          <td data-label="Folder">${f.name}</td>
-          <td data-label="Date Extracted">${extractedAt}</td>
-          <td data-label="Action">
-            <button onclick="openFolder('${f.name}')">View</button>
-          </td>
-        </tr>`;
-      })).then(rows => rows.join(""))}
-    </tbody>
-  </table>
+          <th>Folder</th>
+          <th>Date Extracted</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${await Promise.all(data.map(async f => {
+          let extractedAt = "N/A";
+          try {
+            const { data: meta } = await supabase.storage
+              .from(EXTRACTED_BUCKET)
+              .download(`${f.name}/.extracted.json`);
+            if (meta) {
+              const text = await meta.text();
+              const json = JSON.parse(text);
+              extractedAt = json.extractedAt || "N/A";
+            }
+          } catch {}
+          return `
+          <tr>
+            <td data-label="Folder">${f.name}</td>
+            <td data-label="Date Extracted">${extractedAt}</td>
+            <td data-label="Action">
+              <button onclick="openFolder('${f.name}')">View</button>
+            </td>
+          </tr>`;
+        })).then(rows => rows.join(""))}
+      </tbody>
+    </table>
+  </div>
 </div>
+
 
 <div class="modal-bg" id="modalBg">
   <div class="modal">
