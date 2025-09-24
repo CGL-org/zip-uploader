@@ -3,13 +3,14 @@ import express from "express";
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
 dotenv.config();
-const router = express.Router();
 
+const router = express.Router();
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const EXTRACTED_BUCKET = "Extracted_Files";
 const DONE_BUCKET = "Completed"; 
 
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 app.use(
   session({
