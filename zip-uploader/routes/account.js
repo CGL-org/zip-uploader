@@ -43,51 +43,52 @@ router.get("/", async (req, res) => {
     if (error) throw error;
 
     res.send(`
-      <!doctype html>
-      <html>
-      <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <title>Accounts</title>
-        <style>
-          body { margin:0; font-family: 'Segoe UI', sans-serif; background:#f4f6f9; }
-          header { background:#004d40; color:white; padding:15px; text-align:center; font-size:1.5em; }
-          .sidebar { position:fixed; top:0; left:-240px; width:220px; height:100%; background:#004d40; color:white; padding-top:60px; transition:0.3s; box-shadow:2px 0 6px rgba(0,0,0,0.2); z-index:1000; }
-          .sidebar.active { left:0; }
-          .sidebar a { display:block; padding:14px 18px; color:white; text-decoration:none; font-weight:500; }
-          .sidebar a:hover { background:#00796b; padding-left:25px; }
-          #menuBtn { position:fixed; top:15px; left:15px; background:#00796b; color:white; border:none; padding:10px 14px; cursor:pointer; border-radius:6px; font-size:1em; z-index:2000; }
-          .content { padding:20px; margin-left:0; transition:margin-left 0.3s; }
-          .content.shifted { margin-left:220px; }
-          table { width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-top:20px; }
-          thead { background:#009688; color:white; }
-          th, td { padding:12px; border-bottom:1px solid #ddd; text-align:center; word-break:break-word; }
-          tbody tr:nth-child(even) { background:#f9f9f9; }
-          img.avatar { width:48px; height:48px; border-radius:8px; object-fit:cover; }
-          .actions button, .actions a { margin:0 4px; padding:6px 10px; border-radius:6px; border:none; cursor:pointer; }
-          .btn-edit { background:#0288d1; color:white; }
-          .btn-delete { background:#e53935; color:white; }
-          .btn-create { background:#00796b; color:white; padding:10px 14px; border-radius:8px; text-decoration:none; }
-        </style>
-      </head>
-      <body>
-        <header>👥 Accounts</header>
-<button id="menuBtn" aria-label="Toggle menu">☰ Menu</button>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Accounts</title>
+<style>
+:root { --sidebar-w: 240px; --brand:#004d40; --accent:#009688; --bg:#f4f6f9; }
+body { margin:0; font-family:'Segoe UI', Roboto, Arial, sans-serif; background:var(--bg); color:#222; }
+header { background:var(--brand); color:white; padding:15px; text-align:center; font-size:1.25rem; position:fixed; left:0; right:0; top:0; z-index:900; }
+#menuBtn { position: fixed; top:18px; left:18px; z-index:1100; background: #00796b; color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.15); }
+.sidebar { position:fixed; top:0; left: calc(-1 * var(--sidebar-w)); width:var(--sidebar-w); height:100vh; background:var(--brand); color:white; padding-top:72px; transition:left .28s ease; box-shadow:2px 0 6px rgba(0,0,0,0.2); z-index:1000; overflow-y:auto; }
+.sidebar.active { left:0; }
+.sidebar .profile { text-align:center; padding:20px 14px; border-bottom:1px solid rgba(255,255,255,0.06); background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent); }
+.sidebar .profile img { width:96px; height:96px; border-radius:50%; object-fit:cover; border:3px solid rgba(255,255,255,0.18); display:block; margin:0 auto 10px; }
+.sidebar .profile h3 { margin:6px 0 2px; font-size:1rem; color:#fff; font-weight:600; }
+.sidebar .profile p { margin:0; color:rgba(255,255,255,0.8); font-size:0.85rem; }
+.sidebar .menu { padding:16px 8px; }
+.sidebar .menu a { display:flex; align-items:center; gap:10px; padding:10px 14px; color:#fff; text-decoration:none; border-radius:8px; margin:8px 8px; transition: background .15s ease, transform .08s ease; font-weight:500; }
+.sidebar .menu a:hover { background: rgba(255,255,255,0.05); transform: translateX(4px); }
+.content { transition: margin-left .28s ease; margin-left:0; padding:20px; }
+.content.shifted { margin-left: var(--sidebar-w); }
+table { width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-top:80px; }
+thead { background:var(--accent); color:white; }
+th, td { padding:12px; border-bottom:1px solid #ddd; text-align:center; word-break:break-word; }
+tbody tr:nth-child(even) { background:#f9f9f9; }
+button { background:var(--accent); color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; }
+button:hover { background:#00796b; }
+input { width:100%; padding:10px; margin-bottom:15px; border-radius:6px; border:1px solid #ccc; font-size:1em; }
+img.avatar { width:48px; height:48px; border-radius:8px; object-fit:cover; border:1px solid #ddd; }
+.actions a, .actions button { margin:0 4px; padding:6px 10px; border-radius:6px; border:none; cursor:pointer; text-decoration:none; }
+.actions .btn-edit { background:#0288d1; color:white; }
+.actions .btn-delete { background:#e53935; color:white; }
+</style>
+</head>
+<body>
+<header>👥 Accounts</header>
+<button id="menuBtn">☰ Menu</button>
 
-<aside id="sidebar" class="sidebar" aria-label="Sidebar navigation">
-  <div class="profile" role="region" aria-label="User profile">
-    <img
-      src="${req.session.user?.profile_photo || 'https://via.placeholder.com/150?text=Profile'}"
-      alt="Profile"
-      width="96"
-      height="96"
-      style="display:block; width:96px; height:96px; object-fit:cover; border-radius:50%;"
-    />
+<aside id="sidebar" class="sidebar">
+  <div class="profile">
+    <img src="${req.session.user?.profile_photo || 'https://via.placeholder.com/150?text=Profile'}" alt="Profile">
     <h3>${req.session.user?.full_name || 'User'}</h3>
     <p>${req.session.user?.role || 'user'}</p>
   </div>
-
-  <nav class="menu" role="navigation" aria-label="Main menu">
+  <nav class="menu">
     <a href="/">🏠 Dashboard</a>
     <a href="/extracted">📂 Extracted Files</a>
     <a href="/done">✅ Check and Complete</a>
@@ -96,71 +97,67 @@ router.get("/", async (req, res) => {
   </nav>
 </aside>
 
+<div class="content" id="mainContent">
+  <h2>All users</h2>
+  <input type="text" id="searchInput" placeholder="🔍 Type to filter">
+  <a href="/account/create" style="display:inline-block; margin-bottom:10px; background:#00796b; color:white; padding:8px 12px; border-radius:6px;">➕ Create account</a>
+  <table>
+    <thead>
+      <tr>
+        <th>Photo</th><th>Full name</th><th>Username</th><th>Email</th><th>Contact</th><th>Gender</th><th>User Type</th><th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${users.map(u => {
+        const photo = u.profile_photo || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48'><rect width='100%' height='100%' fill='%23ddd'/></svg>";
+        return `<tr>
+          <td data-label="Photo"><img class="avatar" src="${photo}"></td>
+          <td data-label="Full name">${u.full_name || "-"}</td>
+          <td data-label="Username">${u.username || "-"}</td>
+          <td data-label="Email">${u.email || "-"}</td>
+          <td data-label="Contact">${u.contact_number || "-"}</td>
+          <td data-label="Gender">${u.gender || "-"}</td>
+          <td data-label="User Type">${u.user_type || "user"}</td>
+          <td class="actions">
+            <a class="btn-edit" href="/account/edit/${u.id}">Edit</a>
+            <form style="display:inline" method="POST" action="/account/delete/${u.id}" onsubmit="return confirm('Delete user?')">
+              <button class="btn-delete" type="submit">Delete</button>
+            </form>
+          </td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>
+</div>
 
-        <div class="content" id="mainContent">
-          <div class="container">
-            <div style="display:flex; align-items:center; justify-content:space-between;">
-              <h2>All users</h2>
-              <a class="btn-create" href="/account/create">➕ Create account</a>
-            </div>
-
-          <table>
-            <thead>
-              <tr><th>Photo</th><th>Full name</th><th>Username</th><th>Email</th><th>Contact</th><th>Gender</th><th>User Type</th><th>Action</th></tr>
-            </thead>
-            <tbody>
-              ${users
-                .map((u) => {
-                  const photo = u.profile_photo || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48'><rect width='100%' height='100%' fill='%23ddd'/></svg>";
-                  return `
-                    <tr>
-                      <td><img class="avatar" src="${photo}" alt="avatar"/></td>
-                      <td>${u.full_name || "-"}</td>
-                      <td>${u.username || "-"}</td>
-                      <td>${u.email || "-"}</td>
-                      <td>${u.contact_number || "-"}</td>
-                      <td>${u.gender || "-"}</td>
-                      <td>${u.user_type || "user"}</td>
-                      <td class="actions">
-                        <a class="btn-edit" href="/account/edit/${u.id}">Edit</a>
-                        <form style="display:inline" method="POST" action="/account/delete/${u.id}" onsubmit="return confirm('Delete user?')">
-                          <button class="btn-delete" type="submit">Delete</button>
-                        </form>
-                      </td>
-                    </tr>
-                  `;
-                })
-                .join("")}
-            </tbody>
-          </table>
-          </div>
-        </div>
-
-        <script>
-          const menuBtn = document.getElementById("menuBtn");
-          const sidebar = document.getElementById("sidebar");
-          const content = document.getElementById("mainContent");
-            menuBtn.addEventListener("click", () => {
-              sidebar.classList.toggle("active");
-              content.classList.toggle("shifted");
-            });
-            
-            // Optional: close when clicking outside
-            document.addEventListener("click", (e) => {
-              if (!sidebar.contains(e.target) && !menuBtn.contains(e.target) && sidebar.classList.contains("active")) {
-                sidebar.classList.remove("active");
-                content.classList.remove("shifted");
-              }
-            });
-        </script>
-      </body>
-      </html>
-    `);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("Error fetching users: " + err.message);
+<script>
+const menuBtn = document.getElementById("menuBtn");
+const sidebar = document.getElementById("sidebar");
+const content = document.getElementById("mainContent");
+menuBtn.addEventListener("click", () => { sidebar.classList.toggle("active"); content.classList.toggle("shifted"); });
+document.addEventListener("click", e => {
+  if (!sidebar.contains(e.target) && !menuBtn.contains(e.target) && sidebar.classList.contains("active")) {
+    sidebar.classList.remove("active");
+    content.classList.remove("shifted");
   }
 });
+
+// Search bar filter
+const searchInput = document.getElementById("searchInput");
+searchInput.addEventListener("input", () => {
+  const filter = searchInput.value.toLowerCase();
+  document.querySelectorAll("table tbody tr").forEach(row => {
+    const name = row.querySelector("td[data-label='Full name']").innerText.toLowerCase();
+    row.style.display = name.includes(filter) ? "" : "none";
+  });
+});
+</script>
+</body>
+</html>
+    `);
+  } catch(err) { res.status(500).send("Error fetching users: "+err.message); }
+});
+
 
 // ================== CREATE FORM ==================
 router.get("/create", (req, res) => {
