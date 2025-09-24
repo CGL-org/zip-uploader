@@ -67,7 +67,7 @@ router.get("/", async (req, res) => {
           .actions button, .actions a { margin:0 4px; padding:6px 10px; border-radius:6px; border:none; cursor:pointer; }
           .btn-edit { background:#0288d1; color:white; }
           .btn-delete { background:#e53935; color:white; }
-          .btn-create { background:#00796b; color:white; padding:10px 14px; border-radius:8px; }
+          .btn-create { background:#00796b; color:white; padding:10px 14px; border-radius:8px; text-decoration:none; }
         </style>
       </head>
       <body>
@@ -148,6 +148,13 @@ router.get("/create", (req, res) => {
       <style>
         body { margin:0; font-family: 'Segoe UI', sans-serif; background:#f4f6f9; }
         header { background:#004d40; color:white; padding:15px; text-align:center; font-size:1.5em; }
+        .sidebar { position:fixed; top:0; left:-240px; width:220px; height:100%; background:#004d40; color:white; padding-top:60px; transition:0.3s; box-shadow:2px 0 6px rgba(0,0,0,0.2); z-index:1000; }
+        .sidebar.active { left:0; }
+        .sidebar a { display:block; padding:14px 18px; color:white; text-decoration:none; font-weight:500; }
+        .sidebar a:hover { background:#00796b; padding-left:25px; }
+        #menuBtn { position:fixed; top:15px; left:15px; background:#00796b; color:white; border:none; padding:10px 14px; cursor:pointer; border-radius:6px; font-size:1em; z-index:2000; }
+        .content { padding:20px; margin-left:0; transition:margin-left 0.3s; }
+        .content.shifted { margin-left:220px; }
         .container { max-width:720px; margin:30px auto; background:white; padding:20px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.1);} 
         input, select { width:100%; padding:10px; margin:8px 0; border-radius:6px; border:1px solid #ddd; }
         label { font-weight:600; }
@@ -156,41 +163,60 @@ router.get("/create", (req, res) => {
     </head>
     <body>
       <header>Create account</header>
-      <div class="container">
-        <form method="POST" action="/account/create" enctype="multipart/form-data">
-          <label>Profile photo</label>
-          <input type="file" name="profile" accept="image/*" />
-
-          <label>Full name</label>
-          <input name="full_name" required />
-
-          <label>Username</label>
-          <input name="username" required />
-
-          <label>Password</label>
-          <input name="password" type="password" required />
-
-          <label>Address</label>
-          <input name="address" />
-
-          <label>Email address</label>
-          <input name="email" type="email" />
-
-          <label>Contact number</label>
-          <input name="contact_number" />
-
-          <label>Gender</label>
-          <select name="gender"><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select>
-
-          <label>User Type</label>
-          <select name="user_type"><option value="user" selected>User</option><option value="admin">Admin</option></select>
-
-          <div style="margin-top:12px; display:flex; gap:8px;">
-            <button type="submit">Create</button>
-            <a href="/account" style="align-self:center; margin-left:8px;">Cancel</a>
-          </div>
-        </form>
+      <button id="menuBtn">☰ Menu</button>
+      <div id="sidebar" class="sidebar">
+        <a href="/">🏠 Dashboard</a>
+        <a href="/extracted">📂 Extracted Files</a>
+        <a href="/done">✅ Check and Completed</a>
+        <a href="/account">👥 Accounts</a>
+        <a href="/logout">🚪 Logout</a>
       </div>
+      <div class="content" id="mainContent">
+        <div class="container">
+          <form method="POST" action="/account/create" enctype="multipart/form-data">
+            <label>Profile photo</label>
+            <input type="file" name="profile" accept="image/*" />
+
+            <label>Full name</label>
+            <input name="full_name" required />
+
+            <label>Username</label>
+            <input name="username" required />
+
+            <label>Password</label>
+            <input name="password" type="password" required />
+
+            <label>Address</label>
+            <input name="address" />
+
+            <label>Email address</label>
+            <input name="email" type="email" />
+
+            <label>Contact number</label>
+            <input name="contact_number" />
+
+            <label>Gender</label>
+            <select name="gender"><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select>
+
+            <label>User Type</label>
+            <select name="user_type"><option value="user" selected>User</option><option value="admin">Admin</option></select>
+
+            <div style="margin-top:12px; display:flex; gap:8px;">
+              <button type="submit">Create</button>
+              <a href="/account" style="align-self:center; margin-left:8px;">Cancel</a>
+            </div>
+          </form>
+        </div>
+      </div>
+      <script>
+        const menuBtn = document.getElementById("menuBtn");
+        const sidebar = document.getElementById("sidebar");
+        const content = document.getElementById("mainContent");
+        menuBtn.addEventListener("click", () => {
+          sidebar.classList.toggle("active");
+          content.classList.toggle("shifted");
+        });
+      </script>
     </body>
     </html>
   `);
@@ -272,59 +298,87 @@ router.get("/edit/:id", async (req, res) => {
         <style>
           body { margin:0; font-family: 'Segoe UI', sans-serif; background:#f4f6f9; }
           header { background:#004d40; color:white; padding:15px; text-align:center; font-size:1.5em; }
+          .sidebar { position:fixed; top:0; left:-240px; width:220px; height:100%; background:#004d40; color:white; padding-top:60px; transition:0.3s; box-shadow:2px 0 6px rgba(0,0,0,0.2); z-index:1000; }
+          .sidebar.active { left:0; }
+          .sidebar a { display:block; padding:14px 18px; color:white; text-decoration:none; font-weight:500; }
+          .sidebar a:hover { background:#00796b; padding-left:25px; }
+          #menuBtn { position:fixed; top:15px; left:15px; background:#00796b; color:white; border:none; padding:10px 14px; cursor:pointer; border-radius:6px; font-size:1em; z-index:2000; }
+          .content { padding:20px; margin-left:0; transition:margin-left 0.3s; }
+          .content.shifted { margin-left:220px; }
           .container { max-width:720px; margin:30px auto; background:white; padding:20px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.1);} 
           input, select { width:100%; padding:10px; margin:8px 0; border-radius:6px; border:1px solid #ddd; }
           label { font-weight:600; }
           button { background:#0288d1; color:white; padding:10px 14px; border-radius:8px; border:none; cursor:pointer; }
+          img.avatar { width:72px; height:72px; border-radius:8px; object-fit:cover; border:1px solid #ddd; }
         </style>
       </head>
       <body>
         <header>Edit user</header>
-        <div class="container">
-          <form method="POST" action="/account/edit/${u.id}" enctype="multipart/form-data">
-            <label>Profile photo</label>
-            <div style="display:flex; gap:12px; align-items:center;">
-              <img src="${u.profile_photo || ''}" style="width:72px;height:72px;border-radius:8px;object-fit:cover;border:1px solid #ddd"/>
-              <input type="file" name="profile" accept="image/*" />
-            </div>
-
-            <label>Full name</label>
-            <input name="full_name" value="${u.full_name || ''}" required />
-
-            <label>Username</label>
-            <input name="username" value="${u.username || ''}" required />
-
-            <label>Password (leave blank to keep current)</label>
-            <input name="password" type="password" />
-
-            <label>Address</label>
-            <input name="address" value="${u.address || ''}" />
-
-            <label>Email address</label>
-            <input name="email" type="email" value="${u.email || ''}" />
-
-            <label>Contact number</label>
-            <input name="contact_number" value="${u.contact_number || ''}" />
-
-            <label>Gender</label>
-            <select name="gender"><option value="">Select</option>
-              <option ${u.gender === 'Male' ? 'selected' : ''}>Male</option>
-              <option ${u.gender === 'Female' ? 'selected' : ''}>Female</option>
-              <option ${u.gender === 'Other' ? 'selected' : ''}>Other</option>
-            </select>
-
-            <label>User Type</label>
-            <select name="user_type">
-              <option value="user" ${u.user_type === 'user' ? 'selected' : ''}>User</option>
-              <option value="admin" ${u.user_type === 'admin' ? 'selected' : ''}>Admin</option>
-            </select>
-
-            <div style="margin-top:12px; display:flex; gap:8px;">
-              <button type="submit">Save</button>
-              <a href="/account" style="align-self:center; margin-left:8px;">Cancel</a>
-            </div>
-          </form>
+        <button id="menuBtn">☰ Menu</button>
+        <div id="sidebar" class="sidebar">
+          <a href="/">🏠 Dashboard</a>
+          <a href="/extracted">📂 Extracted Files</a>
+          <a href="/done">✅ Check and Completed</a>
+          <a href="/account">👥 Accounts</a>
+          <a href="/logout">🚪 Logout</a>
         </div>
+        <div class="content" id="mainContent">
+          <div class="container">
+            <form method="POST" action="/account/edit/${u.id}" enctype="multipart/form-data">
+              <label>Profile photo</label>
+              <div style="display:flex; gap:12px; align-items:center;">
+                <img class="avatar" src="${u.profile_photo || ''}" />
+                <input type="file" name="profile" accept="image/*" />
+              </div>
+
+              <label>Full name</label>
+              <input name="full_name" value="${u.full_name || ''}" required />
+
+              <label>Username</label>
+              <input name="username" value="${u.username || ''}" required />
+
+              <label>Password (leave blank to keep current)</label>
+              <input name="password" type="password" />
+
+              <label>Address</label>
+              <input name="address" value="${u.address || ''}" />
+
+              <label>Email address</label>
+              <input name="email" type="email" value="${u.email || ''}" />
+
+              <label>Contact number</label>
+              <input name="contact_number" value="${u.contact_number || ''}" />
+
+              <label>Gender</label>
+              <select name="gender">
+                <option value="">Select</option>
+                <option ${u.gender === 'Male' ? 'selected' : ''}>Male</option>
+                <option ${u.gender === 'Female' ? 'selected' : ''}>Female</option>
+                <option ${u.gender === 'Other' ? 'selected' : ''}>Other</option>
+              </select>
+
+              <label>User Type</label>
+              <select name="user_type">
+                <option value="user" ${u.user_type === 'user' ? 'selected' : ''}>User</option>
+                <option value="admin" ${u.user_type === 'admin' ? 'selected' : ''}>Admin</option>
+              </select>
+
+              <div style="margin-top:12px; display:flex; gap:8px;">
+                <button type="submit">Save</button>
+                <a href="/account" style="align-self:center; margin-left:8px;">Cancel</a>
+              </div>
+            </form>
+          </div>
+        </div>
+        <script>
+          const menuBtn = document.getElementById("menuBtn");
+          const sidebar = document.getElementById("sidebar");
+          const content = document.getElementById("mainContent");
+          menuBtn.addEventListener("click", () => {
+            sidebar.classList.toggle("active");
+            content.classList.toggle("shifted");
+          });
+        </script>
       </body>
       </html>
     `);
