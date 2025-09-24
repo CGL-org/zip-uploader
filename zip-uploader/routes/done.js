@@ -12,6 +12,8 @@ const DONE_BUCKET = "Completed";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
 // ✅ Completed files main page
 router.get("/", async (req, res) => {
   try {
@@ -143,6 +145,7 @@ button:hover { background:#00796b; }
   <nav class="menu">
     <a href="/">🏠 Dashboard</a>
     <a href="/extracted">📂 Extracted Files</a>
+    <a href="/print">🖨 Print Reports</a>
     ${isAdmin ? `<a href="/account">👥 Accounts</a>` : ""}
     <a href="/logout">🚪 Logout</a>
   </nav>
