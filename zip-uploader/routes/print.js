@@ -1,9 +1,50 @@
 // routes/print.js
 import express from "express";
+import { createClient } from "@supabase/supabase-js";
+import dotenv from "dotenv";
 
+dotenv.config();
 const router = express.Router();
 
-// Print page
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const RECEIVED_BUCKET = "Received_Files";
+const EXTRACTED_BUCKET = "Extracted_Files";
+const COMPLETED_BUCKET = "Completed";
+
+function renderLayout(title, content) {
+  return `
+<html>
+<head>
+<title>${title}</title>
+<style>
+body { font-family:'Segoe UI', Roboto, Arial, sans-serif; background:#fff; margin:20px; color:#222; }
+h1 { text-align:center; color:#004d40; margin-bottom:20px; }
+h2 { color:#009688; margin-top:40px; }
+table { width:100%; border-collapse:collapse; margin-top:10px; }
+th, td { border:1px solid #ccc; padding:8px; text-align:left; }
+th { background:#004d40; color:#fff; }
+tr:nth-child(even) { background:#f9f9f9; }
+.print-btn { display:block; margin:20px auto; padding:10px 16px; border:none; background:#009688; color:#fff; font-size:1rem; border-radius:6px; cursor:pointer; }
+.print-btn:hover { background:#00796b; }
+@media print {
+  .print-btn { display:none; }
+}
+</style>
+</head>
+<body>
+<button class="print-btn" onclick="window.print()">🖨 Print This Page</button>
+<h1>${title}</h1>
+${content}
+</body>
+</html>
+  `;
+}
+
+// Print page (selection)
 router.get("/", (req, res) => {
   res.send(`
 <html>
@@ -15,14 +56,9 @@ router.get("/", (req, res) => {
   --accent: #009688;
   --bg: #f4f6f9;
 }
-
 body { margin:0; font-family:'Segoe UI', Roboto, Arial, sans-serif; background:var(--bg); color:#222; }
 header { background:var(--brand); color:white; padding:15px; text-align:center; font-size:1.25rem; }
-
-/* Container */
 .container { max-width:800px; margin:80px auto; padding:20px; background:white; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.1); }
-
-/* Form */
 form { display:flex; flex-direction:column; gap:15px; }
 label { font-weight:600; }
 select, button {
@@ -37,7 +73,6 @@ button:hover { background:#00796b; }
 </head>
 <body>
 <header>🖨 Print Reports</header>
-
 <div class="container">
   <h2>Select Report Type</h2>
   <form action="/print/generate" method="POST" target="_blank">
@@ -58,20 +93,57 @@ button:hover { background:#00796b; }
   `);
 });
 
-// Handle generate (for now just preview selected type)
-router.post("/generate", express.urlencoded({ extended: true }), (req, res) => {
+// Generate reports
+router.post("/generate", express.urlencoded({ extended: true }), async (req, res) => {
   const type = req.body.reportType;
-  res.send(`
-    <html>
-    <head><title>Report Preview</title></head>
-    <body style="font-family:Arial;padding:20px;">
-      <h2>Report Type: ${type}</h2>
-      <p>✅ This is a placeholder for the <b>${type}</b> report. 
-      Later we will connect it to Supabase and auto-generate the data.</p>
-      <button onclick="window.print()">🖨 Print This Page</button>
-    </body>
-    </html>
-  `);
+
+  try {
+    let content = "";
+
+    // 📥 Received Files
+    if (type === "received" || type === "all") {
+      const { data, error } = await supabase.storage.from(RECEIVED_BUCKET).list();
+      if (error) throw error;
+      content += `<h2>📥 Received Files</h2><table><tr><th>File/Folder</th></tr>`;
+      data.forEach(f => { content += `<tr><td>${f.name}</td></tr>`; });
+      content += `</table>`;
+    }
+
+    // 📂 Extracted Files
+    if (type === "extracted" || type === "all") {
+      const { data, error } = await supabase.storage.from(EXTRACTED_BUCKET).list();
+      if (error) throw error;
+      content += `<h2>📂 Extracted Files</h2><table><tr><th>File/Folder</th></tr>`;
+      data.forEach(f => { content += `<tr><td>${f.name}</td></tr>`; });
+      content += `</table>`;
+    }
+
+    // ✅ Completed Files
+    if (type === "completed" || type === "all") {
+      const { data, error } = await supabase.storage.from(COMPLETED_BUCKET).list();
+      if (error) throw error;
+      content += `<h2>✅ Completed Files</h2><table><tr><th>Folder</th></tr>`;
+      data.forEach(f => { content += `<tr><td>${f.name}</td></tr>`; });
+      content += `</table>`;
+    }
+
+    // 👥 Accounts
+    if (type === "accounts" || type === "all") {
+      const { data, error } = await supabase.from("accounts").select("id, full_name, email, role");
+      if (error) throw error;
+      content += `<h2>👥 User Accounts</h2><table><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th></tr>`;
+      data.forEach(acc => {
+        content += `<tr><td>${acc.id}</td><td>${acc.full_name}</td><td>${acc.email}</td><td>${acc.role}</td></tr>`;
+      });
+      content += `</table>`;
+    }
+
+    if (!content) content = `<p>No data found for ${type} report.</p>`;
+
+    res.send(renderLayout("Report: " + type, content));
+  } catch (err) {
+    res.status(500).send("Error generating report: " + err.message);
+  }
 });
 
 export default router;
