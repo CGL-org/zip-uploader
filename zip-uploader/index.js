@@ -11,6 +11,7 @@ import extractedRoutes from "./routes/extracted.js";
 import doneRouter from "./routes/done.js";
 import accountRoutes from "./routes/account.js";
 import bcrypt from "bcryptjs";
+import printRoutes from "./routes/print.js";
 
 dotenv.config();
 
@@ -38,7 +39,7 @@ app.use(
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
+app.use("/print", printRoutes);
 // Session
 app.use(
   session({
