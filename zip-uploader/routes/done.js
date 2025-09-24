@@ -102,6 +102,10 @@ router.get("/", async (req, res) => {
 
   <div class="content" id="mainContent">
     <h2>Completed Folders</h2>
+    <input type="text" id="searchInput" placeholder="Search folders..." style="
+      width:100%; padding:10px 12px; margin-bottom:15px; border-radius:6px; border:1px solid #ccc;
+      font-size:1em; box-shadow:0 1px 3px rgba(0,0,0,0.1);
+    ">
     <table>
       <thead><tr><th>Folder</th><th>Date Completed</th><th>Action</th></tr></thead>
       <tbody>
@@ -183,6 +187,18 @@ router.get("/", async (req, res) => {
     function closeModal(){ document.getElementById('modalBg').style.display='none'; }
     function openImageModal(src){ document.getElementById("fullImage").src = src; document.getElementById("imageModal").style.display="block"; }
     function closeImageModal(){ document.getElementById("imageModal").style.display="none"; }
+
+      // ✅ Search bar functionality
+      const searchInput = document.getElementById("searchInput");
+      searchInput.addEventListener("input", () => {
+        const filter = searchInput.value.toLowerCase();
+        const rows = document.querySelectorAll("table tbody tr");
+        rows.forEach(row => {
+          const folderName = row.querySelector("td[data-label='Folder']").innerText.toLowerCase();
+          row.style.display = folderName.includes(filter) ? "" : "none";
+        });
+      });
+    
   </script>
 </body>
 </html>
