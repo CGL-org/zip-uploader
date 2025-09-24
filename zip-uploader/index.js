@@ -41,7 +41,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ✅ Session must come before routes
-import session from "express-session";
+// ✅ Session must come before routes
 app.use(
   session({
     secret: "supersecretkey", // better: process.env.SESSION_SECRET
@@ -50,15 +50,9 @@ app.use(
   })
 );
 
+// ✅ Routes (after session middleware)
 app.use("/print", printRoutes);
-// Session
-app.use(
-  session({
-    secret: "supersecretkey",
-    resave: false,
-    saveUninitialized: true,
-  })
-);
+
 
 // Multer
 const storage = multer.memoryStorage();
