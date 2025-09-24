@@ -18,93 +18,111 @@ router.get("/", async (req, res) => {
     const { data, error } = await supabase.storage.from(DONE_BUCKET).list("");
     if (error) throw error;
 
+    const rows = await Promise.all(
+      data.map(async (f) => {
+        let completedAt = "N/A";
+        try {
+          const { data: meta } = await supabase.storage.from(DONE_BUCKET).download(`${f.name}/.completed.json`);
+          if (meta) {
+            const txt = await meta.text();
+            completedAt = JSON.parse(txt)?.completedAt || "N/A";
+          }
+        } catch {}
+        return `
+          <tr>
+            <td data-label="Folder">${f.name}</td>
+            <td data-label="Date Completed">${completedAt}</td>
+            <td data-label="Action"><button onclick="openFolder('${f.name}')">View</button></td>
+          </tr>
+        `;
+      })
+    );
+
     res.send(`
-   <html>
+<html>
 <head>
-  <title>Completed Files</title>
-  <style>
-    body { margin:0; font-family: 'Segoe UI', Roboto, Arial, sans-serif; background:var(--bg); color:#222; }
-header { background:var(--brand); color:white; padding:15px; text-align:center; font-size:1.25rem; position:fixed; left:0; right:0; top:0; z-index:900; }
+<title>Completed Files</title>
+<style>
+  :root {
+    --bg: #f4f6f9;
+    --brand: #004d40;
+    --accent: #009688;
+  }
 
+  body { margin:0; font-family:'Segoe UI', Roboto, Arial, sans-serif; background:var(--bg); color:#222; }
+  header { background:var(--brand); color:white; padding:15px; text-align:center; font-size:1.5rem; position:fixed; left:0; right:0; top:0; z-index:900; }
 
-    /* Menu button */
-    #menuBtn {
-      position: fixed; top:15px; left:15px; background:#00796b;
-      color:white; border:none; padding:10px 14px; border-radius:6px;
-      cursor:pointer; font-size:1em; z-index:1001;
-      box-shadow:0 2px 4px rgba(0,0,0,0.2);
-    }
+  /* Menu button */
+  #menuBtn {
+    position: fixed; top:15px; left:15px; background:var(--accent);
+    color:white; border:none; padding:10px 14px; border-radius:6px;
+    cursor:pointer; font-size:1em; z-index:1001; box-shadow:0 2px 4px rgba(0,0,0,0.2);
+  }
 
-    /* Sidebar */
-    .sidebar {
-      position: fixed; top:0; left:-240px; width:220px; height:100%;
-      background:#004d40; color:white; padding-top:60px; transition:0.3s;
-      box-shadow:2px 0 6px rgba(0,0,0,0.2); z-index:1000;
-    }
-    .sidebar.active { left:0; }
-    .sidebar a { display:block; padding:14px 18px; color:white; text-decoration:none; font-weight:500; transition:0.2s; }
-    .sidebar a:hover { background:#00796b; padding-left:25px; }
+  /* Sidebar */
+  .sidebar {
+    position: fixed; top:0; left:-240px; width:220px; height:100%;
+    background:var(--brand); color:white; padding-top:60px; transition:0.3s;
+    box-shadow:2px 0 6px rgba(0,0,0,0.2); z-index:1000;
+  }
+  .sidebar.active { left:0; }
+  .sidebar a { display:block; padding:14px 18px; color:white; text-decoration:none; font-weight:500; transition:0.2s; }
+  .sidebar a:hover { background:var(--accent); padding-left:25px; }
 
-    /* Content */
-    .content { padding:20px; transition: margin-left 0.3s; margin-left:0; }
-    .content.active { margin-left:220px; }
+  /* Content */
+  .content { padding:20px; transition: margin-left 0.3s; margin-left:0; }
+  .content.shifted { margin-left:220px; }
 
-    /* Table */
-    table { width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-top:20px; }
-    thead { background:#009688; color:white; }
-    th, td { padding:12px; border-bottom:1px solid #ddd; text-align:center; word-break:break-word; }
-    tbody tr:nth-child(even) { background:#f9f9f9; }
-    button { background:#009688; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; }
-    button:hover { background:#00796b; }
+  /* Table */
+  table { width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-top:20px; }
+  thead { background:var(--accent); color:white; }
+  th, td { padding:12px; border-bottom:1px solid #ddd; text-align:center; word-break:break-word; }
+  tbody tr:nth-child(even) { background:#f9f9f9; }
+  button { background:var(--accent); color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; }
+  button:hover { background:#00796b; }
 
-    /* Responsive table */
-    @media(max-width:768px){
-      table, thead, tbody, th, td, tr { display:block; width:100%; }
-      thead { display:none; }
-      tr { margin-bottom:15px; background:white; border-radius:6px; padding:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
-      td { text-align:right; padding-left:50%; position:relative; }
-      td::before { content:attr(data-label); position:absolute; left:10px; width:45%; font-weight:bold; text-align:left; }
-    }
+  /* Responsive table */
+  @media(max-width:768px){
+    table, thead, tbody, th, td, tr { display:block; width:100%; }
+    thead { display:none; }
+    tr { margin-bottom:15px; background:white; border-radius:6px; padding:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+    td { text-align:right; padding-left:50%; position:relative; }
+    td::before { content:attr(data-label); position:absolute; left:10px; width:45%; font-weight:bold; text-align:left; }
+  }
 
-    /* Modal */
-    .modal-bg { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); backdrop-filter: blur(6px); display:none; justify-content:center; align-items:center; z-index:2000; }
-    .modal { background:#fff; padding:20px; border-radius:12px; max-width:900px; width:90%; max-height:85vh; overflow-y:auto; box-shadow:0 6px 20px rgba(0,0,0,0.25); }
-    .modal-header { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd; padding-bottom:10px; margin-bottom:15px; }
-    .modal-header h2 { margin:0; font-size:1.3em; color:#004d40; }
-    .modal-header button { background:#333; color:#fff; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; }
-    .section-title { font-size:1.1em; font-weight:bold; color:#004d40; margin:15px 0 10px; }
-    .image-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:10px; }
-    .image-grid img { width:100%; height:100px; object-fit:cover; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.2); cursor:pointer; transition:transform 0.2s; }
-    .image-grid img:hover { transform:scale(1.05); }
-    .file-list { list-style:none; padding:0; margin:0; }
-    .file-list li { padding:8px 0; border-bottom:1px solid #eee; }
-    .file-list a { text-decoration:none; color:#00796b; font-weight:500; }
-    .modal-footer { text-align:right; margin-top:15px; }
-    .modal-footer button { background:#c62828; color:#fff; border:none; padding:8px 14px; border-radius:6px; cursor:pointer; }
+  /* Modal */
+  .modal-bg { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); backdrop-filter: blur(6px); display:none; justify-content:center; align-items:center; z-index:2000; }
+  .modal { background:#fff; padding:20px; border-radius:12px; max-width:900px; width:90%; max-height:85vh; overflow-y:auto; box-shadow:0 6px 20px rgba(0,0,0,0.25); }
+  .modal-header { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd; padding-bottom:10px; margin-bottom:15px; }
+  .modal-header h2 { margin:0; font-size:1.3em; color:var(--brand); }
+  .modal-header button { background:#333; color:#fff; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; }
+  .section-title { font-size:1.1em; font-weight:bold; color:var(--brand); margin:15px 0 10px; }
+  .image-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:10px; }
+  .image-grid img { width:100%; height:100px; object-fit:cover; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.2); cursor:pointer; transition:transform 0.2s; }
+  .image-grid img:hover { transform:scale(1.05); }
+  .file-list { list-style:none; padding:0; margin:0; }
+  .file-list li { padding:8px 0; border-bottom:1px solid #eee; }
+  .file-list a { text-decoration:none; color:var(--accent); font-weight:500; }
+  .modal-footer { text-align:right; margin-top:15px; }
+  .modal-footer button { background:#c62828; color:#fff; border:none; padding:8px 14px; border-radius:6px; cursor:pointer; }
 
-    /* Fullscreen image modal */
-    #imageModal { display:none; position:fixed; z-index:3000; padding-top:50px; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.9); }
-    #imageModal img { margin:auto; display:block; max-width:90%; max-height:90%; }
-    #imageModal span { position:absolute; top:20px; right:35px; color:#fff; font-size:40px; font-weight:bold; cursor:pointer; }
-  </style>
+  /* Fullscreen image modal */
+  #imageModal { display:none; position:fixed; z-index:3000; padding-top:50px; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.9); }
+  #imageModal img { margin:auto; display:block; max-width:90%; max-height:90%; }
+  #imageModal span { position:absolute; top:20px; right:35px; color:#fff; font-size:40px; font-weight:bold; cursor:pointer; }
+</style>
 </head>
 <body>
-  <header>✅ Completed Files</header>
+<header>✅ Completed Files</header>
 <button id="menuBtn" aria-label="Toggle menu">☰ Menu</button>
 
 <aside id="sidebar" class="sidebar" aria-label="Sidebar navigation">
-  <div class="profile" role="region" aria-label="User profile">
-    <img
-      src="${req.session.user.profile_photo || 'https://via.placeholder.com/150?text=Profile'}"
-      alt="Profile"
-      width="96"
-      height="96"
-      style="display:block; width:96px; height:96px; object-fit:cover; border-radius:50%;"
-    />
-    <h3>${req.session.user.full_name || 'User'}</h3>
-    <p>${req.session.user.role || 'user'}</p>
+  <div class="profile" role="region" aria-label="User profile" style="text-align:center; margin-bottom:15px;">
+    <img src="${req.session.user?.profile_photo || 'https://via.placeholder.com/150?text=Profile'}" 
+         alt="Profile" width="96" height="96" style="border-radius:50%; object-fit:cover; margin-bottom:10px;">
+    <h3>${req.session.user?.full_name || 'User'}</h3>
+    <p>${req.session.user?.role || 'user'}</p>
   </div>
-
   <nav class="menu" role="navigation" aria-label="Main menu">
     <a href="/">🏠 Dashboard</a>
     <a href="/extracted">📂 Extracted Files</a>
@@ -112,115 +130,94 @@ header { background:var(--brand); color:white; padding:15px; text-align:center; 
   </nav>
 </aside>
 
-
 <div class="content" id="mainContent">
   <div class="container">
     <h2 style="margin-top:80px;">✅ Completed Folders</h2>
-    <input type="text" id="searchInput" placeholder="🔍 Type to filter" 
-           style="width:100%; padding:10px 12px; margin-bottom:15px; border-radius:6px; border:1px solid #ccc; font-size:1em; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+    <input type="text" id="searchInput" placeholder="🔍 Type to filter">
     <table>
       <thead><tr><th>Folder</th><th>Date Completed</th><th>Action</th></tr></thead>
-      <tbody>
-        ${await Promise.all(data.map(async f => {
-          let completedAt = "N/A";
-          const { data: meta } = await supabase.storage.from(DONE_BUCKET).download(`${f.name}/.completed.json`);
-          if (meta) {
-            const txt = await meta.text();
-            try { completedAt = JSON.parse(txt).completedAt; } catch {}
-          }
-          return `
-          <tr>
-            <td data-label="Folder">${f.name}</td>
-            <td data-label="Date Completed">${completedAt}</td>
-            <td data-label="Action"><button onclick="openFolder('${f.name}')">View</button></td>
-          </tr>`;
-        })).then(rows => rows.join(""))}
-      </tbody>
+      <tbody>${rows.join("")}</tbody>
     </table>
   </div>
 </div>
 
-  <div class="modal-bg" id="modalBg">
-    <div class="modal">
-      <div class="modal-header">
-        <h2 id="folderTitle"></h2>
-        <button onclick="closeModal()">✖ Close</button>
-      </div>
-      <div id="imageSection"></div>
-      <div id="fileSection"></div>
-      <div class="modal-footer">
-        <button id="deleteBtn">🗑 Delete</button>
-      </div>
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="folderTitle"></h2>
+      <button onclick="closeModal()">✖ Close</button>
+    </div>
+    <div id="imageSection"></div>
+    <div id="fileSection"></div>
+    <div class="modal-footer">
+      <button id="deleteBtn">🗑 Delete</button>
     </div>
   </div>
+</div>
 
-  <div id="imageModal"><span onclick="closeImageModal()">&times;</span><img id="fullImage"></div>
+<div id="imageModal"><span onclick="closeImageModal()">&times;</span><img id="fullImage"></div>
 
-  <script>
-    const menuBtn = document.getElementById("menuBtn");
-    const sidebar = document.getElementById("sidebar");
-    const content = document.getElementById("mainContent");
+<script>
+const menuBtn = document.getElementById("menuBtn");
+const sidebar = document.getElementById("sidebar");
+const content = document.getElementById("mainContent");
 
 menuBtn.addEventListener("click", () => {
   sidebar.classList.toggle("active");
   content.classList.toggle("shifted");
 });
 
-// Optional: close when clicking outside
+// Optional: close when clicking outside sidebar
 document.addEventListener("click", (e) => {
-  if (!sidebar.contains(e.target) && !menuBtn.contains(e.target) && sidebar.classList.contains("active")) {
+  if(!sidebar.contains(e.target) && !menuBtn.contains(e.target) && sidebar.classList.contains("active")){
     sidebar.classList.remove("active");
     content.classList.remove("shifted");
   }
 });
 
+let currentFolder = null;
+async function openFolder(folder){
+  currentFolder = folder;
+  const res = await fetch('/done/'+folder+'/list');
+  const data = await res.json();
+  document.getElementById('folderTitle').innerText = folder;
 
-    let currentFolder = null;
-    async function openFolder(folder) {
-      currentFolder = folder;
-      const res = await fetch('/done/'+folder+'/list');
-      const data = await res.json();
-      document.getElementById('folderTitle').innerText = folder;
+  const imageExts = ['.png','.jpg','.jpeg','.gif','.webp','.bmp'];
+  const images = data.files.filter(f => imageExts.some(ext => f.name.toLowerCase().endsWith(ext)));
+  const others = data.files.filter(f => !imageExts.some(ext => f.name.toLowerCase().endsWith(ext)));
 
-      const imageExts = ['.png','.jpg','.jpeg','.gif','.webp','.bmp'];
-      const images = data.files.filter(f => imageExts.some(ext => f.name.toLowerCase().endsWith(ext)));
-      const others = data.files.filter(f => !imageExts.some(ext => f.name.toLowerCase().endsWith(ext)));
+  document.getElementById('imageSection').innerHTML = images.length ? 
+    '<div class="section-title">🖼 Images</div><div class="image-grid">' +
+    images.map(f => '<img src="'+f.publicUrl+'" alt="'+f.name+'" onclick="openImageModal(\\''+f.publicUrl+'\\')">').join('') + '</div>' : "";
 
-      document.getElementById('imageSection').innerHTML = images.length ? 
-        '<div class="section-title">🖼 Images</div><div class="image-grid">' +
-        images.map(f => '<img src="'+f.publicUrl+'" alt="'+f.name+'" onclick="openImageModal(\\''+f.publicUrl+'\\')">').join('') + '</div>' : "";
+  document.getElementById('fileSection').innerHTML = others.length ? 
+    '<div class="section-title">📄 Files</div><ul class="file-list">' +
+    others.map(f => '<li><a href="'+f.publicUrl+'" target="_blank">'+f.name+'</a></li>').join('') + '</ul>' : "";
 
-      document.getElementById('fileSection').innerHTML = others.length ? 
-        '<div class="section-title">📄 Files</div><ul class="file-list">' +
-        others.map(f => '<li><a href="'+f.publicUrl+'" target="_blank">'+f.name+'</a></li>').join('') + '</ul>' : "";
+  document.getElementById('modalBg').style.display='flex';
 
-      document.getElementById('modalBg').style.display='flex';
-
-      document.getElementById('deleteBtn').onclick = async () => {
-        if(confirm("Delete folder '"+folder+"'?")) {
-          const res = await fetch('/done/'+folder+'/delete', { method:'DELETE' });
-          if(res.ok){ alert("Folder deleted."); window.location.reload(); }
-          else { alert("Error deleting folder."); }
-        }
-      }
+  document.getElementById('deleteBtn').onclick = async () => {
+    if(confirm("Delete folder '"+folder+"'?")) {
+      const res = await fetch('/done/'+folder+'/delete', { method:'DELETE' });
+      if(res.ok){ alert("Folder deleted."); window.location.reload(); }
+      else { alert("Error deleting folder."); }
     }
+  }
+}
 
-    function closeModal(){ document.getElementById('modalBg').style.display='none'; }
-    function openImageModal(src){ document.getElementById("fullImage").src = src; document.getElementById("imageModal").style.display="block"; }
-    function closeImageModal(){ document.getElementById("imageModal").style.display="none"; }
+function closeModal(){ document.getElementById('modalBg').style.display='none'; }
+function openImageModal(src){ document.getElementById("fullImage").src = src; document.getElementById("imageModal").style.display="block"; }
+function closeImageModal(){ document.getElementById("imageModal").style.display="none"; }
 
-      // ✅ Search bar functionality
-      const searchInput = document.getElementById("searchInput");
-      searchInput.addEventListener("input", () => {
-        const filter = searchInput.value.toLowerCase();
-        const rows = document.querySelectorAll("table tbody tr");
-        rows.forEach(row => {
-          const folderName = row.querySelector("td[data-label='Folder']").innerText.toLowerCase();
-          row.style.display = folderName.includes(filter) ? "" : "none";
-        });
-      });
-    
-  </script>
+const searchInput = document.getElementById("searchInput");
+searchInput.addEventListener("input", () => {
+  const filter = searchInput.value.toLowerCase();
+  document.querySelectorAll("table tbody tr").forEach(row => {
+    const folderName = row.querySelector("td[data-label='Folder']").innerText.toLowerCase();
+    row.style.display = folderName.includes(filter) ? "" : "none";
+  });
+});
+</script>
 </body>
 </html>
     `);
@@ -251,15 +248,12 @@ router.get("/:folder/list", async (req, res) => {
 router.delete("/:folder/delete", async (req, res) => {
   const folder = req.params.folder;
   try {
-    const { data: files, error: listErr } = await supabase.storage.from(DONE_BUCKET).list(folder);
-    if (listErr) throw listErr;
+    const { data: files, error } = await supabase.storage.from(DONE_BUCKET).list(folder);
+    if (error) throw error;
 
-    if (!files || files.length === 0) {
-      return res.status(404).json({ error: "Folder not found" });
-    }
+    if (!files || files.length === 0) return res.status(404).json({ error: "Folder not found" });
 
     await supabase.storage.from(DONE_BUCKET).remove(files.map(f => `${folder}/${f.name}`));
-
     res.json({ success: true, message: `Folder ${folder} deleted.` });
   } catch (err) {
     res.status(500).json({ error: err.message });
