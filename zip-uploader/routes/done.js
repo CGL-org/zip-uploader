@@ -12,8 +12,6 @@ const DONE_BUCKET = "Completed";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-
 // ✅ Completed files main page
 router.get("/", async (req, res) => {
   try {
