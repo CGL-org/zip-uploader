@@ -102,7 +102,7 @@ router.get("/", async (req, res) => {
 
   <div class="content" id="mainContent">
     <h2>Completed Folders</h2>
-    <input type="text" id="searchInput" placeholder="Search folders..." style="
+    <input type="text" id="searchInput" placeholder="🔍 Type to filter" style="
       width:100%; padding:10px 12px; margin-bottom:15px; border-radius:6px; border:1px solid #ccc;
       font-size:1em; box-shadow:0 1px 3px rgba(0,0,0,0.1);
     ">
