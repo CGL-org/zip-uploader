@@ -111,8 +111,8 @@ router.get("/", async (req, res) => {
 <body>
   <header>📂 Extracted Files</header>
   <div id="menuBtn">☰ Menu</div>
-  <aside id="sidebar" class="sidebar" aria-label="Sidebar navigation">
-    <nav class="menu" role="navigation" aria-label="Main menu">
+  <aside id="sidebar" class="sidebar">
+    <nav class="menu">
       <a href="/">🏠 Dashboard</a>
       <a href="/done">✅ Check and Complete</a>
       <a href="/logout">🚪 Logout</a>
