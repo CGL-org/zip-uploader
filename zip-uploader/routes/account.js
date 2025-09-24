@@ -72,20 +72,37 @@ router.get("/", async (req, res) => {
       </head>
       <body>
         <header>👥 Accounts</header>
-        <button id="menuBtn">☰ Menu</button>
-        <div id="sidebar" class="sidebar">
-          <a href="/">🏠 Dashboard</a>
-          <a href="/extracted">📂 Extracted Files</a>
-          <a href="/done">✅ Check and Completed</a>
-          <a href="/account">👥 Accounts</a>
-          <a href="/logout">🚪 Logout</a>
-        </div>
+<button id="menuBtn" aria-label="Toggle menu">☰ Menu</button>
+
+<aside id="sidebar" class="sidebar" aria-label="Sidebar navigation">
+  <div class="profile" role="region" aria-label="User profile">
+    <img
+      src="${req.session.user?.profile_photo || 'https://via.placeholder.com/150?text=Profile'}"
+      alt="Profile"
+      width="96"
+      height="96"
+      style="display:block; width:96px; height:96px; object-fit:cover; border-radius:50%;"
+    />
+    <h3>${req.session.user?.full_name || 'User'}</h3>
+    <p>${req.session.user?.role || 'user'}</p>
+  </div>
+
+  <nav class="menu" role="navigation" aria-label="Main menu">
+    <a href="/">🏠 Dashboard</a>
+    <a href="/extracted">📂 Extracted Files</a>
+    <a href="/done">✅ Check and Complete</a>
+    <a href="/account">👥 Accounts</a>
+    <a href="/logout">🚪 Logout</a>
+  </nav>
+</aside>
+
 
         <div class="content" id="mainContent">
-          <div style="display:flex; align-items:center; justify-content:space-between;">
-            <h2>All users</h2>
-            <a class="btn-create" href="/account/create">➕ Create account</a>
-          </div>
+          <div class="container">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <h2>All users</h2>
+              <a class="btn-create" href="/account/create">➕ Create account</a>
+            </div>
 
           <table>
             <thead>
@@ -116,16 +133,25 @@ router.get("/", async (req, res) => {
                 .join("")}
             </tbody>
           </table>
+          </div>
         </div>
 
         <script>
           const menuBtn = document.getElementById("menuBtn");
           const sidebar = document.getElementById("sidebar");
           const content = document.getElementById("mainContent");
-          menuBtn.addEventListener("click", () => {
-            sidebar.classList.toggle("active");
-            content.classList.toggle("shifted");
-          });
+            menuBtn.addEventListener("click", () => {
+              sidebar.classList.toggle("active");
+              content.classList.toggle("shifted");
+            });
+            
+            // Optional: close when clicking outside
+            document.addEventListener("click", (e) => {
+              if (!sidebar.contains(e.target) && !menuBtn.contains(e.target) && sidebar.classList.contains("active")) {
+                sidebar.classList.remove("active");
+                content.classList.remove("shifted");
+              }
+            });
         </script>
       </body>
       </html>
