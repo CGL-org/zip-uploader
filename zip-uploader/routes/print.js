@@ -170,5 +170,6 @@ res.send(renderLayout("Report: " + type, `
     <p>Approved by: ________________________</p>
   </div>
 `));
+});
 
-export default router;
+module.exports = router;
