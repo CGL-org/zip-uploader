@@ -92,6 +92,7 @@ img.avatar { width:48px; height:48px; border-radius:8px; object-fit:cover; borde
     <a href="/">🏠 Dashboard</a>
     <a href="/extracted">📂 Extracted Files</a>
     <a href="/done">✅ Check and Complete</a>
+    <a href="/print">🖨 Print Reports</a>
     <a href="/logout">🚪 Logout</a>
   </nav>
 </aside>
