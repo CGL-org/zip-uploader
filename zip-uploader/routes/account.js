@@ -166,6 +166,7 @@ searchInput.addEventListener("input", () => {
 
 
 // ================== CREATE FORM ==================
+// ================== CREATE FORM ==================
 router.get("/create", (req, res) => {
   res.send(`
     <!doctype html>
@@ -175,26 +176,138 @@ router.get("/create", (req, res) => {
       <meta name="viewport" content="width=device-width,initial-scale=1" />
       <title>Create Account</title>
       <style>
-
-      table { display: block; overflow-x: auto; white-space: nowrap; }
-      
-        body { margin:0; font-family: 'Segoe UI', sans-serif; background:#f4f6f9; }
-        header { background:#004d40; color:white; padding:15px; text-align:center; font-size:1.5em; }
-        .sidebar { position:fixed; top:0; left:-240px; width:220px; height:100%; background:#004d40; color:white; padding-top:60px; transition:0.3s; box-shadow:2px 0 6px rgba(0,0,0,0.2); z-index:1000; }
+        :root {
+          --brand: #004d40;
+          --accent: #009688;
+          --light: #f4f6f9;
+          --danger: #e53935;
+        }
+        body {
+          margin:0; 
+          font-family: 'Segoe UI', Roboto, sans-serif; 
+          background: var(--light);
+          color:#333;
+        }
+        header {
+          background: var(--brand); 
+          color:white; 
+          padding:16px; 
+          text-align:center; 
+          font-size:1.3rem;
+          font-weight:600;
+          box-shadow:0 2px 5px rgba(0,0,0,0.2);
+        }
+        #menuBtn {
+          position:fixed; 
+          top:15px; 
+          left:15px; 
+          background:var(--accent); 
+          color:white; 
+          border:none; 
+          padding:10px 14px; 
+          cursor:pointer; 
+          border-radius:6px; 
+          font-size:1em; 
+          z-index:2000; 
+          box-shadow:0 2px 6px rgba(0,0,0,0.15);
+        }
+        .sidebar {
+          position:fixed; 
+          top:0; left:-240px; 
+          width:220px; height:100%; 
+          background:var(--brand); 
+          color:white; 
+          padding-top:60px; 
+          transition:0.3s; 
+          box-shadow:2px 0 6px rgba(0,0,0,0.2); 
+          z-index:1000;
+        }
         .sidebar.active { left:0; }
-        .sidebar a { display:block; padding:14px 18px; color:white; text-decoration:none; font-weight:500; }
-        .sidebar a:hover { background:#00796b; padding-left:25px; }
-        #menuBtn { position:fixed; top:15px; left:15px; background:#00796b; color:white; border:none; padding:10px 14px; cursor:pointer; border-radius:6px; font-size:1em; z-index:2000; }
-        .content { padding:20px; margin-left:0; transition:margin-left 0.3s; }
+        .sidebar a {
+          display:block; 
+          padding:14px 18px; 
+          color:white; 
+          text-decoration:none; 
+          font-weight:500; 
+          border-radius:6px;
+          margin:6px 10px;
+          transition: background .2s, transform .15s;
+        }
+        .sidebar a:hover { background:#00796b; transform:translateX(4px); }
+        .content {
+          padding:20px; 
+          margin-left:0; 
+          transition:margin-left 0.3s; 
+        }
         .content.shifted { margin-left:220px; }
-        .container { max-width:720px; margin:30px auto; background:white; padding:20px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.1);} 
-        input, select { width:100%; padding:10px; margin:8px 0; border-radius:6px; border:1px solid #ddd; }
-        label { font-weight:600; }
-        button { background:#00796b; color:white; padding:10px 14px; border-radius:8px; border:none; cursor:pointer; }
+        
+        .container {
+          max-width:720px; 
+          margin:100px auto; 
+          background:white; 
+          padding:30px; 
+          border-radius:12px; 
+          box-shadow:0 4px 12px rgba(0,0,0,0.08);
+          animation: fadeIn .5s ease;
+        }
+        @keyframes fadeIn {
+          from { opacity:0; transform:translateY(20px); }
+          to { opacity:1; transform:translateY(0); }
+        }
+        h2 {
+          margin-top:0;
+          color:var(--brand);
+          text-align:center;
+          font-size:1.4rem;
+          margin-bottom:20px;
+        }
+        label {
+          font-weight:600;
+          display:block;
+          margin:12px 0 6px;
+          color:#444;
+        }
+        input, select {
+          width:100%; 
+          padding:12px 14px; 
+          border-radius:8px; 
+          border:1px solid #ccc; 
+          font-size:1em; 
+          transition: border .2s, box-shadow .2s;
+        }
+        input:focus, select:focus {
+          border-color:var(--accent);
+          outline:none;
+          box-shadow:0 0 0 3px rgba(0,150,136,0.2);
+        }
+        button {
+          background:var(--accent);
+          color:white;
+          padding:12px 18px;
+          border-radius:8px;
+          border:none;
+          cursor:pointer;
+          font-size:1em;
+          font-weight:600;
+          transition: background .2s;
+        }
+        button:hover { background:#00796b; }
+        .actions {
+          margin-top:20px; 
+          display:flex; 
+          gap:12px;
+          justify-content:flex-end;
+        }
+        .actions a {
+          align-self:center;
+          text-decoration:none;
+          color:var(--danger);
+          font-weight:500;
+        }
       </style>
     </head>
     <body>
-      <header>Create account</header>
+      <header>Create Account</header>
       <button id="menuBtn">☰ Menu</button>
       <div id="sidebar" class="sidebar">
         <a href="/">🏠 Dashboard</a>
@@ -203,8 +316,10 @@ router.get("/create", (req, res) => {
         <a href="/account">👥 Accounts</a>
         <a href="/logout">🚪 Logout</a>
       </div>
+
       <div class="content" id="mainContent">
         <div class="container">
+          <h2>➕ New User Account</h2>
           <form method="POST" action="/account/create" enctype="multipart/form-data">
             <label>Profile photo</label>
             <input type="file" name="profile" accept="image/*" />
@@ -228,14 +343,22 @@ router.get("/create", (req, res) => {
             <input name="contact_number" />
 
             <label>Gender</label>
-            <select name="gender"><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select>
+            <select name="gender">
+              <option value="">Select</option>
+              <option>Male</option>
+              <option>Female</option>
+              <option>Other</option>
+            </select>
 
             <label>User Type</label>
-            <select name="user_type"><option value="user" selected>User</option><option value="admin">Admin</option></select>
+            <select name="user_type">
+              <option value="user" selected>User</option>
+              <option value="admin">Admin</option>
+            </select>
 
-            <div style="margin-top:12px; display:flex; gap:8px;">
-              <button type="submit">Create</button>
-              <a href="/account" style="align-self:center; margin-left:8px;">Cancel</a>
+            <div class="actions">
+              <button type="submit">Create Account</button>
+              <a href="/account">Cancel</a>
             </div>
           </form>
         </div>
@@ -253,6 +376,7 @@ router.get("/create", (req, res) => {
     </html>
   `);
 });
+
 
 // ================== HANDLE CREATE ==================
 router.post("/create", upload.single("profile"), async (req, res) => {
