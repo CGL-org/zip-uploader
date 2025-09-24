@@ -235,6 +235,7 @@ if (isAdmin) {
       <a href="/">🏠 Dashboard</a>
       <a href="/extracted">📂 Extracted Files</a>
       <a href="/done">✅ Check and Completed</a>
+      <a href="/print">🖨 Print Reports</a>
       ${isAdmin ? `<a href="/account">👥 Accounts</a>` : ""}
       <a href="/logout">🚪 Logout</a>
     `;
