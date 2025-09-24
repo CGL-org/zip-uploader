@@ -97,7 +97,7 @@ header { background:var(--brand); color:white; padding:15px; text-align:center; 
     }
 
 .content .container {
-  max-width: 1200px;   /* optional, limits max width on large screens */
+  max-width: 100%;   /* optional, limits max width on large screens */
   margin: 0 auto;      /* centers the container */
 
   box-sizing: border-box;
