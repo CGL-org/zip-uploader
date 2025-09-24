@@ -77,6 +77,12 @@ router.get("/", async (req, res) => {
       td::before { content:attr(data-label); position:absolute; left:10px; font-weight:bold; }
       th { display:none; }
     }
+
+#imageModal { display:none; position:fixed; z-index:3000; padding-top:50px; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.9); }
+#imageModal img { margin:auto; display:block; max-width:90%; max-height:90%; }
+#imageModal span { position:absolute; top:20px; right:35px; color:#fff; font-size:40px; font-weight:bold; cursor:pointer; }
+
+    
   </style>
 </head>
 <body>
@@ -134,6 +140,12 @@ ${await Promise.all(data.map(async f => {
     </div>
   </div>
 
+<div id="imageModal">
+  <span onclick="closeImageModal()">&times;</span>
+  <img id="fullImage">
+</div>
+
+
   <script>
     const menuBtn = document.getElementById("menuBtn");
     const sidebar = document.getElementById("sidebar");
@@ -156,7 +168,10 @@ ${await Promise.all(data.map(async f => {
       const images = data.files.filter(f => imageExts.some(ext => f.name.toLowerCase().endsWith(ext)));
       const others = data.files.filter(f => !imageExts.some(ext => f.name.toLowerCase().endsWith(ext)));
 
-      document.getElementById('imageSection').innerHTML = images.length ? '<div class="section-title">🖼 Images</div><div class="image-grid">' + images.map(f => '<img src="'+f.publicUrl+'" alt="'+f.name+'">').join('') + '</div>' : "";
+      document.getElementById('imageSection').innerHTML = images.length ? 
+  '<div class="section-title">🖼 Images</div><div class="image-grid">' +
+  images.map(f => '<img src="'+f.publicUrl+'" alt="'+f.name+'" onclick="openImageModal(\\''+f.publicUrl+'\\')">').join('') + '</div>' : "";
+
       document.getElementById('fileSection').innerHTML = others.length ? '<div class="section-title">📄 Files</div><ul class="file-list">' + others.map(f => '<li><a href="'+f.publicUrl+'" target="_blank">'+f.name+'</a></li>').join('') + '</ul>' : "";
 
       document.getElementById('modalBg').style.display = 'flex';
@@ -169,6 +184,14 @@ ${await Promise.all(data.map(async f => {
     }
 
     function closeModal() { document.getElementById('modalBg').style.display = 'none'; }
+   function openImageModal(src) {
+      document.getElementById("fullImage").src = src;
+      document.getElementById("imageModal").style.display = "block";
+    }
+    
+    function closeImageModal() {
+      document.getElementById("imageModal").style.display = "none";
+    }
   </script>
 </body>
 </html>
