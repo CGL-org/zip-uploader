@@ -2,7 +2,7 @@
 import express from "express";
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
-
+import printRoutes from "./routes/print.js";
 dotenv.config();
 const router = express.Router();
 
@@ -10,6 +10,18 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const EXTRACTED_BUCKET = "Extracted_Files";
 const DONE_BUCKET = "Completed"; 
+
+
+app.use(
+  session({
+    secret: "supersecretkey", // better: process.env.SESSION_SECRET
+    resave: false,
+    saveUninitialized: true,
+  })
+);
+
+// ✅ Routes (after session middleware)
+app.use("/print", printRoutes);
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -132,6 +144,7 @@ header { background:var(--brand); color:white; padding:15px; text-align:center; 
   <nav class="menu" role="navigation" aria-label="Main menu">
     <a href="/">🏠 Dashboard</a>
     <a href="/done">✅ Check and Complete</a>
+    <a href="/print">🖨 Print Reports</a>
     ${isAdmin ? `<a href="/account">👥 Accounts</a>` : ""}
     <a href="/logout">🚪 Logout</a>
   </nav>
