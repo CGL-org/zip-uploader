@@ -23,7 +23,7 @@ app.use(
 // ✅ Routes (after session middleware)
 app.use("/print", printRoutes);
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
 
 // 📂 Extracted files page
 router.get("/", async (req, res) => {
