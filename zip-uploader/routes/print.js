@@ -33,6 +33,17 @@ tr:nth-child(even) { background:#f9f9f9; }
 @media print {
   .print-btn { display:none; }
 }
+
+.footer-signatory {
+  margin-top: 60px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 1rem;
+}
+.footer-signatory p {
+  margin: 0 40px;
+}
+
 </style>
 </head>
 <body>
@@ -150,10 +161,14 @@ if (type === "accounts" || type === "all") {
 
     if (!content) content = `<p>No data found for ${type} report.</p>`;
 
-    res.send(renderLayout("Report: " + type, content));
-  } catch (err) {
-    res.status(500).send("Error generating report: " + err.message);
-  }
-});
+const currentUser = req.session?.user?.full_name || "Unknown User";
+
+res.send(renderLayout("Report: " + type, `
+  ${content}
+  <div class="footer-signatory">
+    <p>Printed by: <strong>${currentUser}</strong></p>
+    <p>Approved by: ________________________</p>
+  </div>
+`));
 
 export default router;
