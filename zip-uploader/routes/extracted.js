@@ -128,52 +128,50 @@ header { background:var(--brand); color:white; padding:15px; text-align:center; 
 </aside>
 
 <div class="content" id="mainContent">
-  <h2 style="margin-top:80px; color:var(--brand); font-size:1.5rem;">Extracted Folders</h2>
+  <h2 style="margin-top:80px;">📂 Extracted Folders</h2>
 
-  <input type="text" id="searchInput" placeholder="🔍 Type folder name to filter..." 
-         style="width:100%; max-width:600px; padding:10px 14px; margin:15px 0; border-radius:8px; border:1px solid #ccc; font-size:1rem; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+  <input type="text" id="searchInput" placeholder="🔍 Type to filter" 
+         style="width:100%; padding:10px 12px; margin-bottom:15px; border-radius:6px; border:1px solid #ccc; font-size:1em; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
 
-  <div style="overflow-x:auto;">
-    <table style="width:100%; min-width:600px; border-radius:8px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
-      <thead style="background:var(--accent); color:white;">
+  <table>
+    <thead>
+      <tr>
+        <th>Folder</th>
+        <th>Date Extracted</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${await Promise.all(data.map(async f => {
+        let extractedAt = "N/A";
+        try {
+          const { data: meta } = await supabase.storage
+            .from(EXTRACTED_BUCKET)
+            .download(`${f.name}/.extracted.json`);
+          if (meta) {
+            const text = await meta.text();
+            const json = JSON.parse(text);
+            extractedAt = json.extractedAt || "N/A";
+          }
+        } catch {}
+        return `
         <tr>
-          <th>Folder</th>
-          <th>Date Extracted</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${await Promise.all(data.map(async f => {
-          let extractedAt = "N/A";
-          try {
-            const { data: meta } = await supabase.storage
-              .from(EXTRACTED_BUCKET)
-              .download(`${f.name}/.extracted.json`);
-            if (meta) {
-              const text = await meta.text();
-              const json = JSON.parse(text);
-              extractedAt = json.extractedAt || "N/A";
-            }
-          } catch {}
-          return `
-          <tr>
-            <td data-label="Folder">${f.name}</td>
-            <td data-label="Date Extracted">${extractedAt}</td>
-            <td data-label="Action">
-              <button onclick="openFolder('${f.name}')">View</button>
-            </td>
-          </tr>`;
-        })).then(rows => rows.join(""))}
-      </tbody>
-    </table>
-  </div>
+          <td data-label="Folder">${f.name}</td>
+          <td data-label="Date Extracted">${extractedAt}</td>
+          <td data-label="Action">
+            <button onclick="openFolder('${f.name}')">View</button>
+          </td>
+        </tr>`;
+      })).then(rows => rows.join(""))}
+    </tbody>
+  </table>
 </div>
 
 <div class="modal-bg" id="modalBg">
   <div class="modal">
     <div class="modal-header">
       <h2 id="folderTitle"></h2>
-      <button onclick="closeModal()">✖</button>
+      <button onclick="closeModal()">✖ Close</button>
     </div>
     <div id="imageSection"></div>
     <div id="fileSection"></div>
@@ -182,6 +180,7 @@ header { background:var(--brand); color:white; padding:15px; text-align:center; 
     </div>
   </div>
 </div>
+
 
 <div id="imageModal">
   <span onclick="closeImageModal()">&times;</span>
