@@ -98,9 +98,16 @@ img.avatar { width:48px; height:48px; border-radius:8px; object-fit:cover; borde
 </aside>
 
 <div class="content" id="mainContent">
-  <h2>All users</h2>
-  <input type="text" id="searchInput" placeholder="🔍 Type to filter">
-  <a href="/account/create" style="display:inline-block; margin-bottom:10px; background:#00796b; color:white; padding:8px 12px; border-radius:6px;">➕ Create account</a>
+  <h2 style="margin-top:80px;">All users</h2>
+
+  <div style="display:flex; justify-content:space-between; align-items:center; margin:10px 0 20px 0;">
+    <a href="/account/create" 
+       style="display:inline-block; background:#00796b; color:white; padding:8px 12px; border-radius:6px; text-decoration:none; font-weight:500;">
+       ➕ Create account
+    </a>
+    <input type="text" id="searchInput" placeholder="🔍 Type to filter" 
+           style="max-width:260px; padding:8px 10px; border-radius:6px; border:1px solid #ccc;" />
+  </div>
   <table>
     <thead>
       <tr>
@@ -146,10 +153,10 @@ document.addEventListener("click", e => {
 const searchInput = document.getElementById("searchInput");
 searchInput.addEventListener("input", () => {
   const filter = searchInput.value.toLowerCase();
-  document.querySelectorAll("table tbody tr").forEach(row => {
-    const name = row.querySelector("td[data-label='Full name']").innerText.toLowerCase();
-    row.style.display = name.includes(filter) ? "" : "none";
-  });
+    document.querySelectorAll("table tbody tr").forEach(row => {
+      const text = row.innerText.toLowerCase();
+      row.style.display = text.includes(filter) ? "" : "none";
+    });
 });
 </script>
 </body>
@@ -169,6 +176,9 @@ router.get("/create", (req, res) => {
       <meta name="viewport" content="width=device-width,initial-scale=1" />
       <title>Create Account</title>
       <style>
+
+      table { display: block; overflow-x: auto; white-space: nowrap; }
+      
         body { margin:0; font-family: 'Segoe UI', sans-serif; background:#f4f6f9; }
         header { background:#004d40; color:white; padding:15px; text-align:center; font-size:1.5em; }
         .sidebar { position:fixed; top:0; left:-240px; width:220px; height:100%; background:#004d40; color:white; padding-top:60px; transition:0.3s; box-shadow:2px 0 6px rgba(0,0,0,0.2); z-index:1000; }
