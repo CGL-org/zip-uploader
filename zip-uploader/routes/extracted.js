@@ -24,26 +24,33 @@ router.get("/", async (req, res) => {
 <head>
   <title>Extracted Files</title>
   <style>
-    body { margin:0; font-family: Arial, sans-serif; background:#f4f6f9; }
-    header { background:#004d40; color:white; padding:15px; text-align:center; font-size:1.5em; position:sticky; top:0; z-index:100; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
-    
 :root { --sidebar-w: 240px; --brand:#004d40; --accent:#009688; --bg:#f4f6f9; }
-.sidebar {
-  position:fixed;
-  top:0;
-  left: calc(-1 * var(--sidebar-w)); /* hide sidebar initially */
-  width:var(--sidebar-w);
-  height:100vh;
-  background:var(--brand);
-  color:white;
-  padding-top:72px;
-  transition: left .28s ease;
-  box-shadow:2px 0 6px rgba(0,0,0,0.2);
-  z-index:1000;
-  overflow-y:auto;
-}
 
+body { margin:0; font-family: 'Segoe UI', Roboto, Arial, sans-serif; background:var(--bg); color:#222; }
+
+header { background:var(--brand); color:white; padding:15px; text-align:center; font-size:1.25rem; position:fixed; left:0; right:0; top:0; z-index:900; }
+
+    /* Sidebar */
+#menuBtn {
+  position: fixed; top:18px; left:18px; z-index:1100;
+  background: #00796b; color:white; border:none;
+  padding:8px 12px; border-radius:6px; cursor:pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+.sidebar {
+  position:fixed; top:0; left: calc(-1 * var(--sidebar-w));
+  width:var(--sidebar-w); height:100vh; background:var(--brand);
+  color:white; padding-top:72px; transition:left .28s ease;
+  box-shadow:2px 0 6px rgba(0,0,0,0.2); z-index:1000; overflow-y:auto;
+}
 .sidebar.active { left: 0; }
+
+.sidebar .profile { text-align:center; padding:20px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent); }
+
+.sidebar .profile img { width:96px; height:96px; border-radius:50%; object-fit:cover; border:3px solid rgba(255,255,255,0.18); display:block; margin:0 auto 10px; }
+
+.sidebar .profile h3 { margin:6px 0 2px; font-size:1rem; color:#fff; font-weight:600; }
+.sidebar .profile p { margin:0; color:rgba(255,255,255,0.8); font-size:0.85rem; }
 
 .sidebar .menu { padding:16px 8px; }
 .sidebar .menu a {
@@ -52,23 +59,11 @@ router.get("/", async (req, res) => {
 }
 .sidebar .menu a:hover { background: rgba(255,255,255,0.05); transform: translateX(4px); }
 
-#menuBtn {
-  position: fixed;
-  top:18px;
-  left:18px;
-  z-index:1100;
-  background: #00796b;
-  color:white;
-  border:none;
-  padding:8px 12px;
-  border-radius:6px;
-  cursor:pointer;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-}
-
-.content { transition: margin-left .28s ease; margin-left: 0; }
+    /* Content */
+.content { transition: margin-left .28s ease; margin-left:0; }
 .content.shifted { margin-left: var(--sidebar-w); }
 
+@media (max-width:720px) { :root { --sidebar-w: 200px; } .sidebar .profile img { width:72px; height:72px; } #menuBtn { left:12px; top:12px; } }
 
     /* Table */
     table { width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-top:20px; }
@@ -110,14 +105,27 @@ router.get("/", async (req, res) => {
 </head>
 <body>
   <header>📂 Extracted Files</header>
-  <div id="menuBtn">☰ Menu</div>
-  <aside id="sidebar" class="sidebar">
-    <nav class="menu">
-      <a href="/">🏠 Dashboard</a>
-      <a href="/done">✅ Check and Complete</a>
-      <a href="/logout">🚪 Logout</a>
-    </nav>
-  </aside>
+<button id="menuBtn" aria-label="Toggle menu">☰ Menu</button>
+
+<aside id="sidebar" class="sidebar" aria-label="Sidebar navigation">
+  <div class="profile" role="region" aria-label="User profile">
+    <img
+      src="${req.session.user.profile_photo || 'https://via.placeholder.com/150?text=Profile'}"
+      alt="Profile"
+      width="96"
+      height="96"
+      style="display:block; width:96px; height:96px; object-fit:cover; border-radius:50%;"
+    />
+    <h3>${req.session.user.full_name || 'User'}</h3>
+    <p>${req.session.user.role || 'user'}</p>
+  </div>
+
+  <nav class="menu" role="navigation" aria-label="Main menu">
+    <a href="/">🏠 Dashboard</a>
+    <a href="/done">✅ Check and Complete</a>
+    <a href="/logout">🚪 Logout</a>
+  </nav>
+</aside>
 
 <div class="content" id="mainContent">
   <h2>Available Folders</h2>
@@ -181,20 +189,20 @@ ${await Promise.all(data.map(async f => {
   <script>
     const menuBtn = document.getElementById("menuBtn");
     const sidebar = document.getElementById("sidebar");
-    const mainContent = document.getElementById("mainContent");
-    
-menuBtn.addEventListener("click", () => {
-  sidebar.classList.toggle("active");
-  mainContent.classList.toggle("shifted");
-});
+    const content = document.getElementById("mainContent");
 
-// Close sidebar when clicking outside on small screens
-document.addEventListener("click", (e) => {
-  if (!sidebar.contains(e.target) && !menuBtn.contains(e.target) && sidebar.classList.contains("active")) {
-    sidebar.classList.remove("active");
-    mainContent.classList.remove("shifted");
-  }
-});
+    menuBtn.addEventListener("click", () => {
+      sidebar.classList.toggle("active");
+      content.classList.toggle("shifted");
+    });
+    
+    // Optional: close when clicking outside
+    document.addEventListener("click", (e) => {
+      if (!sidebar.contains(e.target) && !menuBtn.contains(e.target) && sidebar.classList.contains("active")) {
+        sidebar.classList.remove("active");
+        content.classList.remove("shifted");
+      }
+    });
 
     let currentFolder = null;
     async function openFolder(folder) {
