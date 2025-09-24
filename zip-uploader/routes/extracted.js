@@ -47,6 +47,8 @@ router.get("/", async (req, res) => {
     .content { transition: margin-left 0.3s; padding:20px; margin-left:0; }
     .content.active { margin-left:220px; }
 
+
+
     /* Table */
     table { width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-top:20px; }
     thead { background:#009688; color:white; }
@@ -94,8 +96,15 @@ router.get("/", async (req, res) => {
     <a href="/logout">🚪 Logout</a>
   </div>
 
-  <div class="content" id="mainContent">
-    <h2>Available Folders</h2>
+<div class="content" id="mainContent">
+  <h2>Available Folders</h2>
+  
+  <!-- Search bar inserted here -->
+  <input type="text" id="searchInput" placeholder="🔍 Search folders..." style="
+    width:100%; padding:10px 12px; margin-bottom:15px; border-radius:6px; border:1px solid #ccc; font-size:1em;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+  ">
+  
     <table>
       <thead><tr><th>Folder</th><th>Date Extracted</th><th>Action</th></tr></thead>
       <tbody>
@@ -192,6 +201,18 @@ ${await Promise.all(data.map(async f => {
     function closeImageModal() {
       document.getElementById("imageModal").style.display = "none";
     }
+
+  // ✅ Search bar functionality
+  const searchInput = document.getElementById("searchInput");
+  searchInput.addEventListener("input", () => {
+    const filter = searchInput.value.toLowerCase();
+    const rows = document.querySelectorAll("table tbody tr");
+    rows.forEach(row => {
+      const folderName = row.querySelector("td[data-label='Folder']").innerText.toLowerCase();
+      row.style.display = folderName.includes(filter) ? "" : "none";
+    });
+  });
+    
   </script>
 </body>
 </html>
