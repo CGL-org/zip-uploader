@@ -17,6 +17,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 router.get("/", async (req, res) => {
   try {
     const { data, error } = await supabase.storage.from(EXTRACTED_BUCKET).list("");
+    const isAdmin = req.session.user?.role === "admin";
     if (error) throw error;
 
     res.send(`
