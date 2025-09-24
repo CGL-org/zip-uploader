@@ -99,7 +99,7 @@ header { background:var(--brand); color:white; padding:15px; text-align:center; 
 .content .container {
   max-width: 100%;   /* optional, limits max width on large screens */
   margin: 0 auto;      /* centers the container */
-
+  padding:20px;
   box-sizing: border-box;
 }
 
