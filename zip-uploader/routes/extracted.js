@@ -2,7 +2,6 @@
 import express from "express";
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
-import printRoutes from "./routes/print.js";
 dotenv.config();
 const router = express.Router();
 
