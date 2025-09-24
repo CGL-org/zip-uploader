@@ -43,7 +43,6 @@ tr:nth-child(even) { background:#f9f9f9; }
 .footer-signatory p {
   margin: 0 40px;
 }
-
 </style>
 </head>
 <body>
@@ -55,7 +54,7 @@ ${content}
   `;
 }
 
-// Print page (selection)
+// 📑 Print page (selection)
 router.get("/", (req, res) => {
   res.send(`
 <html>
@@ -104,7 +103,7 @@ button:hover { background:#00796b; }
   `);
 });
 
-// Generate reports
+// 📊 Generate reports
 router.post("/generate", express.urlencoded({ extended: true }), async (req, res) => {
   const type = req.body.reportType;
 
@@ -139,38 +138,39 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     }
 
     // 👥 Accounts
-// 👥 Accounts
-if (type === "accounts" || type === "all") {
-  const { data, error } = await supabase
-    .from("users")
-    .select("id, full_name, username");
-  if (error) throw error;
-  content += `<h2>👥 User Accounts</h2>
-  <table>
-    <tr><th>ID</th><th>Name</th><th>Username</th></tr>`;
-  data.forEach(acc => {
-    content += `<tr>
-      <td>${acc.id}</td>
-      <td>${acc.full_name}</td>
-      <td>${acc.username}</td>
-    </tr>`;
-  });
-  content += `</table>`;
-}
-
+    if (type === "accounts" || type === "all") {
+      const { data, error } = await supabase
+        .from("users")
+        .select("id, full_name, username");
+      if (error) throw error;
+      content += `<h2>👥 User Accounts</h2>
+      <table>
+        <tr><th>ID</th><th>Name</th><th>Username</th></tr>`;
+      data.forEach(acc => {
+        content += `<tr>
+          <td>${acc.id}</td>
+          <td>${acc.full_name}</td>
+          <td>${acc.username}</td>
+        </tr>`;
+      });
+      content += `</table>`;
+    }
 
     if (!content) content = `<p>No data found for ${type} report.</p>`;
 
-const currentUser = req.session?.user?.full_name || "Unknown User";
+    const currentUser = req.session?.user?.full_name || "Unknown User";
 
-res.send(renderLayout("Report: " + type, `
-  ${content}
-  <div class="footer-signatory">
-    <p>Printed by: <strong>${currentUser}</strong></p>
-    <p>Approved by: ________________________</p>
-  </div>
-`));
+    res.send(renderLayout("Report: " + type, `
+      ${content}
+      <div class="footer-signatory">
+        <p>Printed by: <strong>${currentUser}</strong></p>
+        <p>Approved by: ________________________</p>
+      </div>
+    `));
+  } catch (err) {
+    console.error("Error generating report:", err.message);
+    res.status(500).send(`<p style="color:red;">Error generating report: ${err.message}</p>`);
+  }
 });
 
-//
-module.exports = router;
+export default router;
