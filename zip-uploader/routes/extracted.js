@@ -128,70 +128,56 @@ header { background:var(--brand); color:white; padding:15px; text-align:center; 
 </aside>
 
 <div class="content" id="mainContent">
-  <h2 style="margin-top:80px; color:#004d40;">Available Folders</h2>
-  
-  <!-- Search bar -->
-  <input type="text" id="searchInput" placeholder="🔍 Type to filter folders" style="
-    width:100%; max-width:600px; padding:10px 12px; margin:15px 0 20px;
-    border-radius:6px; border:1px solid #ccc; font-size:1em;
-    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+  <h2>Extracted Folders</h2>
+  <input type="text" id="searchInput" placeholder="🔍 Type to filter" style="
+    width:100%; padding:10px 12px; margin-bottom:15px; border-radius:6px; border:1px solid #ccc;
+    font-size:1em; box-shadow:0 1px 3px rgba(0,0,0,0.1);
   ">
-  
-  <!-- Table -->
-  <div style="overflow-x:auto;">
-    <table>
-      <thead>
+  <table>
+    <thead><tr><th>Folder</th><th>Date Extracted</th><th>Action</th></tr></thead>
+    <tbody>
+      ${await Promise.all(data.map(async f => {
+        let extractedAt = "N/A";
+        try {
+          const { data: meta } = await supabase.storage
+            .from(EXTRACTED_BUCKET)
+            .download(`${f.name}/.extracted.json`);
+          if (meta) {
+            const text = await meta.text();
+            const json = JSON.parse(text);
+            extractedAt = json.extractedAt || "N/A";
+          }
+        } catch {}
+        return `
         <tr>
-          <th>Folder</th>
-          <th>Date Extracted</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${await Promise.all(data.map(async f => {
-          let extractedAt = "N/A";
-          try {
-            const { data: meta } = await supabase.storage
-              .from(EXTRACTED_BUCKET)
-              .download(`${f.name}/.extracted.json`);
-            if (meta) {
-              const text = await meta.text();
-              const json = JSON.parse(text);
-              extractedAt = json.extractedAt || "N/A";
-            }
-          } catch (e) { console.warn("meta read failed", f.name, e.message); }
-
-          return `
-          <tr>
-            <td data-label="Folder">${f.name}</td>
-            <td data-label="Date Extracted">${extractedAt}</td>
-            <td data-label="Action"><button onclick="openFolder('${f.name}')">View</button></td>
-          </tr>`;
-        })).then(rows => rows.join(""))}
-      </tbody>
-    </table>
-  </div>
+          <td data-label="Folder">${f.name}</td>
+          <td data-label="Date Extracted">${extractedAt}</td>
+          <td data-label="Action"><button onclick="openFolder('${f.name}')">View</button></td>
+        </tr>`;
+      })).then(rows => rows.join(""))}
+    </tbody>
+  </table>
 </div>
 
-
-  <div class="modal-bg" id="modalBg">
-    <div class="modal">
-      <div class="modal-header">
-        <h2 id="folderTitle"></h2>
-        <button onclick="closeModal()">✖</button>
-      </div>
-      <div id="imageSection"></div>
-      <div id="fileSection"></div>
-      <div class="modal-footer">
-        <button id="doneBtn">✅ Done</button>
-      </div>
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="folderTitle"></h2>
+      <button onclick="closeModal()">✖</button>
+    </div>
+    <div id="imageSection"></div>
+    <div id="fileSection"></div>
+    <div class="modal-footer">
+      <button id="doneBtn">✅ Done</button>
     </div>
   </div>
+</div>
 
 <div id="imageModal">
   <span onclick="closeImageModal()">&times;</span>
   <img id="fullImage">
 </div>
+
 
 
   <script>
