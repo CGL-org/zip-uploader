@@ -12,19 +12,6 @@ const DONE_BUCKET = "Completed";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-app.use(
-  session({
-    secret: "supersecretkey", // better: process.env.SESSION_SECRET
-    resave: false,
-    saveUninitialized: true,
-  })
-);
-
-// ✅ Routes (after session middleware)
-app.use("/print", printRoutes);
-
-
-
 // 📂 Extracted files page
 router.get("/", async (req, res) => {
   try {
