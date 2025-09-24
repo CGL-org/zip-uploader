@@ -235,9 +235,23 @@ router.post("/:folder/done", async (req, res) => {
     }
 
     // ✅ Correct — proper template literal
-    await supabase.storage
-      .from(DONE_BUCKET)
-      .upload(`${folder}/.completed.json`, JSON.stringify({ completedAt: new Date().toISOString() }), { upsert: true });
+function formatDateTime() {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  const hh = String(now.getHours()).padStart(2, "0");
+  const mi = String(now.getMinutes()).padStart(2, "0");
+  const ss = String(now.getSeconds()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
+}
+
+const completedAt = formatDateTime();
+
+await supabase.storage
+  .from(DONE_BUCKET)
+  .upload(`${folder}/.completed.json`, JSON.stringify({ completedAt }), { upsert: true });
+
 
     // ✅ Correct — map with template literal
     await supabase.storage
