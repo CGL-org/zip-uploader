@@ -23,12 +23,9 @@ router.get("/", async (req, res) => {
 <head>
   <title>Completed Files</title>
   <style>
-    body { margin:0; font-family: Arial, sans-serif; background:#f4f6f9; }
-    header {
-      background:#004d40; color:white; padding:15px; text-align:center;
-      font-size:1.5em; position:sticky; top:0; z-index:100;
-      box-shadow:0 2px 4px rgba(0,0,0,0.1);
-    }
+    body { margin:0; font-family: 'Segoe UI', Roboto, Arial, sans-serif; background:var(--bg); color:#222; }
+header { background:var(--brand); color:white; padding:15px; text-align:center; font-size:1.25rem; position:fixed; left:0; right:0; top:0; z-index:900; }
+
 
     /* Menu button */
     #menuBtn {
@@ -93,19 +90,34 @@ router.get("/", async (req, res) => {
 </head>
 <body>
   <header>✅ Completed Files</header>
-  <button id="menuBtn">☰ Menu</button>
-  <div id="sidebar" class="sidebar">
+<button id="menuBtn" aria-label="Toggle menu">☰ Menu</button>
+
+<aside id="sidebar" class="sidebar" aria-label="Sidebar navigation">
+  <div class="profile" role="region" aria-label="User profile">
+    <img
+      src="${req.session.user.profile_photo || 'https://via.placeholder.com/150?text=Profile'}"
+      alt="Profile"
+      width="96"
+      height="96"
+      style="display:block; width:96px; height:96px; object-fit:cover; border-radius:50%;"
+    />
+    <h3>${req.session.user.full_name || 'User'}</h3>
+    <p>${req.session.user.role || 'user'}</p>
+  </div>
+
+  <nav class="menu" role="navigation" aria-label="Main menu">
     <a href="/">🏠 Dashboard</a>
     <a href="/extracted">📂 Extracted Files</a>
     <a href="/logout">🚪 Logout</a>
-  </div>
+  </nav>
+</aside>
 
-  <div class="content" id="mainContent">
-    <h2>Completed Folders</h2>
-    <input type="text" id="searchInput" placeholder="🔍 Type to filter" style="
-      width:100%; padding:10px 12px; margin-bottom:15px; border-radius:6px; border:1px solid #ccc;
-      font-size:1em; box-shadow:0 1px 3px rgba(0,0,0,0.1);
-    ">
+
+<div class="content" id="mainContent">
+  <div class="container">
+    <h2 style="margin-top:80px;">✅ Completed Folders</h2>
+    <input type="text" id="searchInput" placeholder="🔍 Type to filter" 
+           style="width:100%; padding:10px 12px; margin-bottom:15px; border-radius:6px; border:1px solid #ccc; font-size:1em; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
     <table>
       <thead><tr><th>Folder</th><th>Date Completed</th><th>Action</th></tr></thead>
       <tbody>
@@ -126,6 +138,7 @@ router.get("/", async (req, res) => {
       </tbody>
     </table>
   </div>
+</div>
 
   <div class="modal-bg" id="modalBg">
     <div class="modal">
@@ -148,11 +161,19 @@ router.get("/", async (req, res) => {
     const sidebar = document.getElementById("sidebar");
     const content = document.getElementById("mainContent");
 
-    menuBtn.addEventListener("click", () => {
-      const isOpen = sidebar.classList.contains("active");
-      sidebar.classList.toggle("active", !isOpen);
-      content.classList.toggle("active", !isOpen);
-    });
+menuBtn.addEventListener("click", () => {
+  sidebar.classList.toggle("active");
+  content.classList.toggle("shifted");
+});
+
+// Optional: close when clicking outside
+document.addEventListener("click", (e) => {
+  if (!sidebar.contains(e.target) && !menuBtn.contains(e.target) && sidebar.classList.contains("active")) {
+    sidebar.classList.remove("active");
+    content.classList.remove("shifted");
+  }
+});
+
 
     let currentFolder = null;
     async function openFolder(folder) {
