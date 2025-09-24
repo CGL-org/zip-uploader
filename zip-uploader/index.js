@@ -39,6 +39,17 @@ app.use(
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// ✅ Session must come before routes
+import session from "express-session";
+app.use(
+  session({
+    secret: "supersecretkey", // better: process.env.SESSION_SECRET
+    resave: false,
+    saveUninitialized: true,
+  })
+);
+
 app.use("/print", printRoutes);
 // Session
 app.use(
