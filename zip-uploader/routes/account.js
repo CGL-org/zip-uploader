@@ -166,7 +166,6 @@ searchInput.addEventListener("input", () => {
 
 
 // ================== CREATE FORM ==================
-// ================== CREATE FORM ==================
 router.get("/create", (req, res) => {
   res.send(`
     <!doctype html>
@@ -308,14 +307,6 @@ router.get("/create", (req, res) => {
     </head>
     <body>
       <header>Create Account</header>
-      <button id="menuBtn">☰ Menu</button>
-      <div id="sidebar" class="sidebar">
-        <a href="/">🏠 Dashboard</a>
-        <a href="/extracted">📂 Extracted Files</a>
-        <a href="/done">✅ Check and Completed</a>
-        <a href="/account">👥 Accounts</a>
-        <a href="/logout">🚪 Logout</a>
-      </div>
 
       <div class="content" id="mainContent">
         <div class="container">
