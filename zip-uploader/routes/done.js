@@ -43,73 +43,90 @@ router.get("/", async (req, res) => {
 <head>
 <title>Completed Files</title>
 <style>
-  :root {
-    --bg: #f4f6f9;
-    --brand: #004d40;
-    --accent: #009688;
-  }
+:root {
+  --sidebar-w: 240px;
+  --brand: #004d40;
+  --accent: #009688;
+  --bg: #f4f6f9;
+}
 
-  body { margin:0; font-family:'Segoe UI', Roboto, Arial, sans-serif; background:var(--bg); color:#222; }
-  header { background:var(--brand); color:white; padding:15px; text-align:center; font-size:1.5rem; position:fixed; left:0; right:0; top:0; z-index:900; }
+body { margin:0; font-family:'Segoe UI', Roboto, Arial, sans-serif; background:var(--bg); color:#222; }
+header { background:var(--brand); color:white; padding:15px; text-align:center; font-size:1.25rem; position:fixed; left:0; right:0; top:0; z-index:900; }
 
-  /* Menu button */
-  #menuBtn {
-    position: fixed; top:15px; left:15px; background:var(--accent);
-    color:white; border:none; padding:10px 14px; border-radius:6px;
-    cursor:pointer; font-size:1em; z-index:1001; box-shadow:0 2px 4px rgba(0,0,0,0.2);
-  }
+/* Menu button */
+#menuBtn {
+  position: fixed; top:18px; left:18px; z-index:1100;
+  background: var(--accent); color:white; border:none;
+  padding:8px 12px; border-radius:6px; cursor:pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
 
-  /* Sidebar */
-  .sidebar {
-    position: fixed; top:0; left:-240px; width:220px; height:100%;
-    background:var(--brand); color:white; padding-top:60px; transition:0.3s;
-    box-shadow:2px 0 6px rgba(0,0,0,0.2); z-index:1000;
-  }
-  .sidebar.active { left:0; }
-  .sidebar a { display:block; padding:14px 18px; color:white; text-decoration:none; font-weight:500; transition:0.2s; }
-  .sidebar a:hover { background:var(--accent); padding-left:25px; }
+/* Sidebar */
+.sidebar {
+  position:fixed; top:0; left: calc(-1 * var(--sidebar-w));
+  width:var(--sidebar-w); height:100vh; background:var(--brand);
+  color:white; padding-top:72px; transition:left .28s ease;
+  box-shadow:2px 0 6px rgba(0,0,0,0.2); z-index:1000; overflow-y:auto;
+}
+.sidebar.active { left: 0; }
 
-  /* Content */
-  .content { padding:20px; transition: margin-left 0.3s; margin-left:0; }
-  .content.shifted { margin-left:220px; }
+.sidebar .profile { text-align:center; padding:20px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent); }
+.sidebar .profile img { width:96px; height:96px; border-radius:50%; object-fit:cover; border:3px solid rgba(255,255,255,0.18); display:block; margin:0 auto 10px; }
+.sidebar .profile h3 { margin:6px 0 2px; font-size:1rem; color:#fff; font-weight:600; }
+.sidebar .profile p { margin:0; color:rgba(255,255,255,0.8); font-size:0.85rem; }
 
-  /* Table */
-  table { width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-top:20px; }
-  thead { background:var(--accent); color:white; }
-  th, td { padding:12px; border-bottom:1px solid #ddd; text-align:center; word-break:break-word; }
-  tbody tr:nth-child(even) { background:#f9f9f9; }
-  button { background:var(--accent); color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; }
-  button:hover { background:#00796b; }
+.sidebar .menu { padding:16px 8px; }
+.sidebar .menu a {
+  display:flex; align-items:center; gap:10px; padding:10px 14px; color: #fff;
+  text-decoration:none; border-radius:8px; margin:8px 8px; transition: background .15s ease, transform .08s ease; font-weight:500;
+}
+.sidebar .menu a:hover { background: rgba(255,255,255,0.05); transform: translateX(4px); }
 
-  /* Responsive table */
-  @media(max-width:768px){
-    table, thead, tbody, th, td, tr { display:block; width:100%; }
-    thead { display:none; }
-    tr { margin-bottom:15px; background:white; border-radius:6px; padding:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
-    td { text-align:right; padding-left:50%; position:relative; }
-    td::before { content:attr(data-label); position:absolute; left:10px; width:45%; font-weight:bold; text-align:left; }
-  }
+/* Content */
+.content { transition: margin-left .28s ease; margin-left:0; }
+.content.shifted { margin-left: var(--sidebar-w); }
 
-  /* Modal */
-  .modal-bg { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); backdrop-filter: blur(6px); display:none; justify-content:center; align-items:center; z-index:2000; }
-  .modal { background:#fff; padding:20px; border-radius:12px; max-width:900px; width:90%; max-height:85vh; overflow-y:auto; box-shadow:0 6px 20px rgba(0,0,0,0.25); }
-  .modal-header { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd; padding-bottom:10px; margin-bottom:15px; }
-  .modal-header h2 { margin:0; font-size:1.3em; color:var(--brand); }
-  .modal-header button { background:#333; color:#fff; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; }
-  .section-title { font-size:1.1em; font-weight:bold; color:var(--brand); margin:15px 0 10px; }
-  .image-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:10px; }
-  .image-grid img { width:100%; height:100px; object-fit:cover; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.2); cursor:pointer; transition:transform 0.2s; }
-  .image-grid img:hover { transform:scale(1.05); }
-  .file-list { list-style:none; padding:0; margin:0; }
-  .file-list li { padding:8px 0; border-bottom:1px solid #eee; }
-  .file-list a { text-decoration:none; color:var(--accent); font-weight:500; }
-  .modal-footer { text-align:right; margin-top:15px; }
-  .modal-footer button { background:#c62828; color:#fff; border:none; padding:8px 14px; border-radius:6px; cursor:pointer; }
+.content .container { max-width:100%; margin:0 auto; padding:20px; box-sizing:border-box; }
 
-  /* Fullscreen image modal */
-  #imageModal { display:none; position:fixed; z-index:3000; padding-top:50px; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.9); }
-  #imageModal img { margin:auto; display:block; max-width:90%; max-height:90%; }
-  #imageModal span { position:absolute; top:20px; right:35px; color:#fff; font-size:40px; font-weight:bold; cursor:pointer; }
+/* Table */
+table { width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-top:20px; }
+thead { background:var(--accent); color:white; }
+th, td { padding:12px; border-bottom:1px solid #ddd; text-align:center; word-break:break-word; }
+tbody tr:nth-child(even) { background:#f9f9f9; }
+button { background:var(--accent); color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; }
+button:hover { background:#00796b; }
+
+/* Modal */
+.modal-bg { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:none; justify-content:center; align-items:center; z-index:2000; }
+.modal { background:#fff; padding:20px; border-radius:12px; max-width:900px; width:90%; max-height:85vh; overflow-y:auto; }
+.modal-header { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd; padding-bottom:10px; }
+.modal-header h2 { margin:0; font-size:1.2em; color:#004d40; }
+.section-title { font-weight:bold; color:#004d40; margin:15px 0 8px; }
+.image-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:10px; }
+.image-grid img { width:100%; height:100px; object-fit:cover; border-radius:6px; cursor:pointer; transition:transform 0.2s; }
+.image-grid img:hover { transform:scale(1.05); }
+.file-list { list-style:none; padding:0; }
+.file-list li { padding:6px 0; border-bottom:1px solid #eee; }
+.modal-footer { text-align:right; margin-top:15px; }
+.modal-footer button { background:#c62828; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; }
+
+/* Responsive Table */
+@media(max-width:768px){
+  table, thead, tbody, th, td, tr { display:block; }
+  tr { margin-bottom:15px; }
+  td { text-align:right; padding-left:50%; position:relative; }
+  td::before { content:attr(data-label); position:absolute; left:10px; font-weight:bold; }
+  th { display:none; }
+}
+
+/* Fullscreen image modal */
+#imageModal { display:none; position:fixed; z-index:3000; padding-top:50px; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.9); }
+#imageModal img { margin:auto; display:block; max-width:90%; max-height:90%; }
+#imageModal span { position:absolute; top:20px; right:35px; color:#fff; font-size:40px; font-weight:bold; cursor:pointer; }
+
+/* Search input */
+#searchInput { width:100%; padding:10px 12px; margin-bottom:15px; border-radius:6px; border:1px solid #ccc; font-size:1em; box-shadow:0 1px 3px rgba(0,0,0,0.1); }
+
 </style>
 </head>
 <body>
@@ -117,13 +134,12 @@ router.get("/", async (req, res) => {
 <button id="menuBtn" aria-label="Toggle menu">☰ Menu</button>
 
 <aside id="sidebar" class="sidebar" aria-label="Sidebar navigation">
-  <div class="profile" role="region" aria-label="User profile" style="text-align:center; margin-bottom:15px;">
-    <img src="${req.session.user?.profile_photo || 'https://via.placeholder.com/150?text=Profile'}" 
-         alt="Profile" width="96" height="96" style="border-radius:50%; object-fit:cover; margin-bottom:10px;">
+  <div class="profile">
+    <img src="${req.session.user?.profile_photo || 'https://via.placeholder.com/150?text=Profile'}" alt="Profile" />
     <h3>${req.session.user?.full_name || 'User'}</h3>
     <p>${req.session.user?.role || 'user'}</p>
   </div>
-  <nav class="menu" role="navigation" aria-label="Main menu">
+  <nav class="menu">
     <a href="/">🏠 Dashboard</a>
     <a href="/extracted">📂 Extracted Files</a>
     <a href="/logout">🚪 Logout</a>
@@ -135,7 +151,9 @@ router.get("/", async (req, res) => {
     <h2 style="margin-top:80px;">✅ Completed Folders</h2>
     <input type="text" id="searchInput" placeholder="🔍 Type to filter">
     <table>
-      <thead><tr><th>Folder</th><th>Date Completed</th><th>Action</th></tr></thead>
+      <thead>
+        <tr><th>Folder</th><th>Date Completed</th><th>Action</th></tr>
+      </thead>
       <tbody>${rows.join("")}</tbody>
     </table>
   </div>
@@ -155,7 +173,10 @@ router.get("/", async (req, res) => {
   </div>
 </div>
 
-<div id="imageModal"><span onclick="closeImageModal()">&times;</span><img id="fullImage"></div>
+<div id="imageModal">
+  <span onclick="closeImageModal()">&times;</span>
+  <img id="fullImage">
+</div>
 
 <script>
 const menuBtn = document.getElementById("menuBtn");
@@ -167,7 +188,6 @@ menuBtn.addEventListener("click", () => {
   content.classList.toggle("shifted");
 });
 
-// Optional: close when clicking outside sidebar
 document.addEventListener("click", (e) => {
   if(!sidebar.contains(e.target) && !menuBtn.contains(e.target) && sidebar.classList.contains("active")){
     sidebar.classList.remove("active");
@@ -195,7 +215,6 @@ async function openFolder(folder){
     others.map(f => '<li><a href="'+f.publicUrl+'" target="_blank">'+f.name+'</a></li>').join('') + '</ul>' : "";
 
   document.getElementById('modalBg').style.display='flex';
-
   document.getElementById('deleteBtn').onclick = async () => {
     if(confirm("Delete folder '"+folder+"'?")) {
       const res = await fetch('/done/'+folder+'/delete', { method:'DELETE' });
@@ -226,7 +245,7 @@ searchInput.addEventListener("input", () => {
   }
 });
 
-// 📂 List contents of completed folder
+// List contents of completed folder
 router.get("/:folder/list", async (req, res) => {
   const folder = req.params.folder;
   try {
@@ -244,7 +263,7 @@ router.get("/:folder/list", async (req, res) => {
   }
 });
 
-// 🗑 Delete completed folder
+// Delete completed folder
 router.delete("/:folder/delete", async (req, res) => {
   const folder = req.params.folder;
   try {
