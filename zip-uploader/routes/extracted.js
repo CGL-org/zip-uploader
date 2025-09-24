@@ -131,6 +131,7 @@ header { background:var(--brand); color:white; padding:15px; text-align:center; 
   <nav class="menu" role="navigation" aria-label="Main menu">
     <a href="/">🏠 Dashboard</a>
     <a href="/done">✅ Check and Complete</a>
+    ${isAdmin ? `<a href="/account">👥 Accounts</a>` : ""}
     <a href="/logout">🚪 Logout</a>
   </nav>
 </aside>
