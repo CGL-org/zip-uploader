@@ -77,7 +77,12 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     res.setHeader("Content-Disposition", `inline; filename="report-${type}.pdf"`);
     doc.pipe(res);
 
+    // 📅 Date (top-right)
+    const now = new Date().toLocaleString();
+    doc.fontSize(10).fillColor("gray").text(`Date Printed: ${now}`, { align: "right" });
+
     // Title
+    doc.moveDown();
     doc.fontSize(20).fillColor("#004d40").text(`Report: ${type.toUpperCase()}`, { align: "center" });
     doc.moveDown();
 
@@ -112,52 +117,56 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     }
 
     // 👥 Accounts
-// 👥 Accounts
-if (type === "accounts" || type === "all") {
-  const { data, error } = await supabase
-    .from("users")
-    .select("id, full_name, username, email, contact_number");
-  if (error) throw error;
+    if (type === "accounts" || type === "all") {
+      const { data, error } = await supabase
+        .from("users")
+        .select("id, full_name, username, email, contact_number");
+      if (error) throw error;
 
-  doc.fontSize(14).fillColor("#009688").text("User Accounts");
-  doc.moveDown(0.5);
+      doc.fontSize(14).fillColor("#009688").text("User Accounts");
+      doc.moveDown(0.5);
 
-  // Table header
-    doc.fontSize(12).fillColor("black");
-    
-    const startY = doc.y; // keep same Y for all headers
-    
-    doc.text("ID", 50, startY);
-    doc.text("Full Name", 120, startY);
-    doc.text("Username", 280, startY);
-    doc.text("Email", 420, startY);
-    doc.text("Contact", 620, startY);
+      // Table header
+      doc.fontSize(12).fillColor("black");
+      const startY = doc.y;
+      doc.text("ID", 50, startY);
+      doc.text("Full Name", 120, startY);
+      doc.text("Username", 280, startY);
+      doc.text("Email", 420, startY);
+      doc.text("Contact", 620, startY);
 
-  // Divider line
-  doc.moveDown(0.2);
-  doc.moveTo(50, doc.y).lineTo(750, doc.y).stroke();
-  doc.moveDown(0.5);
+      // Divider line
+      doc.moveDown(0.2);
+      doc.moveTo(50, doc.y).lineTo(750, doc.y).stroke();
+      doc.moveDown(0.5);
 
-  // Rows
-  data.forEach(acc => {
-    const y = doc.y;
-    doc.text(acc.id, 50, y, { width: 140 });
-    doc.text(acc.full_name, 200, y, { width: 130 });
-    doc.text(acc.username, 350, y, { width: 100 });
-    doc.text(acc.email || "-", 470, y, { width: 170 });
-    doc.text(acc.contact_number || "-", 650, y);
-    doc.moveDown();
-  });
+      // Rows
+      data.forEach(acc => {
+        const y = doc.y;
+        doc.text(acc.id, 50, y, { width: 60 });
+        doc.text(acc.full_name || "-", 120, y, { width: 150 });
+        doc.text(acc.username || "-", 280, y, { width: 120 });
+        doc.text(acc.email || "-", 420, y, { width: 180 });
+        doc.text(acc.contact_number || "-", 620, y, { width: 100 });
+        doc.moveDown();
+      });
 
-  doc.moveDown();
-}
+      doc.moveDown();
+    }
 
-
-    // Footer signatory
-    doc.moveDown(4);
+    // 📌 Footer signatories
+    doc.moveDown(6);
     const currentUser = req.session?.user?.full_name || "Unknown User";
-    doc.fontSize(12).fillColor("black").text(`Printed by: ${currentUser}`, { continued: true });
-    doc.text(" ".repeat(40) + "Approved by: ________________________");
+
+    // Printed by (left)
+    doc.fontSize(12).fillColor("black").text(`Printed by: ${currentUser}`, 50, doc.y);
+
+    // Approved by (right, same line)
+    doc.text("Approved by: ________________________", 400, doc.y);
+
+    // 🌐 Website footer
+    doc.moveDown(4);
+    doc.fontSize(10).fillColor("gray").text("https://bottle-scanner.onrender.com", { align: "center" });
 
     // Finalize PDF
     doc.end();
@@ -166,5 +175,6 @@ if (type === "accounts" || type === "all") {
     res.status(500).send(`<p style="color:red;">Error generating report: ${err.message}</p>`);
   }
 });
+
 
 export default router;
