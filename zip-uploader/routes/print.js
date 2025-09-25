@@ -154,37 +154,42 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       doc.moveDown();
     }
 
-    // 📌 Footer signatories
-    const currentUser = req.session?.user?.full_name || "Unknown User";
+// 📌 Footer signatories and footer link
+const currentUser = req.session?.user?.full_name || "Unknown User";
+const margin = 50; // left/right margin
+const signText = "Approved by: ________________________";
 
-    // Align both on same Y line above footer
-    const signY = doc.page.height - 150; // fixed height above footer
-    doc.fontSize(12).fillColor("black").text(`Printed by: ${currentUser}`, 50, signY);
-    doc.text("Approved by: ________________________", 400, signY);
+function addSignatories(doc) {
+  const signY = doc.page.height - 150; // fixed height above footer
 
-    // 🌐 Footer link (always bottom-left)
-    function addFooter(doc) {
-      const bottomY = doc.page.height - 30; // bottom margin
-      doc.fontSize(10).fillColor("gray").text(
-        "https://bottle-scanner.onrender.com",
-        50, // left margin
-        bottomY,
-        { lineBreak: false }
-      );
-    }
+  // Printed by (left)
+  doc.fontSize(12).fillColor("black").text(`Printed by: ${currentUser}`, margin, signY);
 
-    // Add footer to the first page
-    addFooter(doc);
+  // Approved by (right)
+  const approvedX = doc.page.width - margin - doc.widthOfString(signText);
+  doc.text(signText, approvedX, signY);
+}
 
-    // Ensure footer is added on every new page
-    doc.on("pageAdded", () => {
-      addFooter(doc);
+function addFooter(doc) {
+  const bottomY = doc.page.height - 30; // bottom margin
+  doc.fontSize(10).fillColor("gray").text(
+    "https://bottle-scanner.onrender.com",
+    margin, // left margin
+    bottomY,
+    { lineBreak: false }
+  );
+}
 
-      // also re-add signatories on new pages
-      const signYnew = doc.page.height - 150;
-      doc.fontSize(12).fillColor("black").text(`Printed by: ${currentUser}`, 50, signYnew);
-      doc.text("Approved by: ________________________", 400, signYnew);
-    });
+// Add to first page
+addSignatories(doc);
+addFooter(doc);
+
+// Ensure signatories and footer are added on every new page
+doc.on("pageAdded", () => {
+  addSignatories(doc);
+  addFooter(doc);
+});
+
 
 
     // Finalize PDF
