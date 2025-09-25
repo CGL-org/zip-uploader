@@ -132,8 +132,8 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       doc.text("ID", 50, startY);
       doc.text("Full Name", 240, startY);
       doc.text("Username", 380, startY);
-      doc.text("Email", 500, startY);
-      doc.text("Contact", 580, startY);
+      doc.text("Email", 480, startY);
+      doc.text("Contact", 660, startY);
 
       // Divider line
       doc.moveDown(0.2);
@@ -146,8 +146,8 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
         doc.text(acc.id, 50, y, { width: 200 });
         doc.text(acc.full_name || "-", 240, y, { width: 150 });
         doc.text(acc.username || "-", 380, y, { width: 120 });
-        doc.text(acc.email || "-", 500, y, { width: 180 });
-        doc.text(acc.contact_number || "-", 620, y, { width: 700 });
+        doc.text(acc.email || "-", 480, y, { width: 180 });
+        doc.text(acc.contact_number || "-", 660, y, { width: 700 });
         doc.moveDown();
       });
 
