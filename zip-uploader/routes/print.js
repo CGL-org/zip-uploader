@@ -71,7 +71,8 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
 
   try {
     // Create PDF
-    const doc = new PDFDocument({ margin: 40 });
+    const landscape = (type === "accounts" || type === "all");
+    const doc = new PDFDocument({ margin: 40, layout: landscape ? "landscape" : "portrait" });
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `inline; filename="report-${type}.pdf"`);
     doc.pipe(res);
@@ -114,7 +115,7 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     if (type === "accounts" || type === "all") {
       const { data, error } = await supabase
         .from("users")
-        .select("id, full_name, username");
+        .select("id, full_name, username, email, contact_number");
       if (error) throw error;
       doc.fontSize(14).fillColor("#009688").text("User Accounts");
       doc.moveDown(0.5);
