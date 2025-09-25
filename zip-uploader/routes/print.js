@@ -132,8 +132,8 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       doc.text("ID", 50, startY);
       doc.text("Full Name", 240, startY);
       doc.text("Username", 380, startY);
-      doc.text("Email", 520, startY);
-      doc.text("Contact", 700, startY);
+      doc.text("Email", 500, startY);
+      doc.text("Contact", 580, startY);
 
       // Divider line
       doc.moveDown(0.2);
@@ -143,10 +143,10 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       // Rows
       data.forEach(acc => {
         const y = doc.y;
-        doc.text(acc.id, 50, y, { width: 60 });
+        doc.text(acc.id, 50, y, { width: 200 });
         doc.text(acc.full_name || "-", 240, y, { width: 150 });
         doc.text(acc.username || "-", 380, y, { width: 120 });
-        doc.text(acc.email || "-", 520, y, { width: 180 });
+        doc.text(acc.email || "-", 500, y, { width: 180 });
         doc.text(acc.contact_number || "-", 620, y, { width: 700 });
         doc.moveDown();
       });
@@ -167,13 +167,23 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     // Approved by (right, same line)
     doc.text("Approved by: ________________________", 400, signY);
 
-      // 🌐 Website footer (bottom-left)
+    // ✅ Footer function
+    function addFooter(doc) {
       const bottomY = doc.page.height - 40; // 40 = bottom margin
       doc.fontSize(10).fillColor("gray").text(
         "https://bottle-scanner.onrender.com",
         50, // X position (left margin)
         bottomY
       );
+    }
+
+    // Add footer to the first page
+    addFooter(doc);
+    
+    // Ensure footer is added on every new page
+    doc.on("pageAdded", () => {
+      addFooter(doc);
+    });
 
     // Finalize PDF
     doc.end();
