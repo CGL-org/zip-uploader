@@ -18,6 +18,7 @@ const COMPLETED_BUCKET = "Completed";
 
 // 📑 Print page (selection)
 router.get("/", (req, res) => {
+   const isAdmin = req.session.user?.role === "admin";
   res.send(`
 <html>
 <head>
@@ -54,7 +55,7 @@ button:hover { background:#00796b; }
       <option value="received">📥 Received Files</option>
       <option value="extracted">📂 Extracted Files</option>
       <option value="completed">✅ Completed Files</option>
-      <option value="accounts">👥 User Accounts</option>
+      ${isAdmin ? '<option value="accounts">👥 User Accounts</option>' : ''}
       <option value="all">📊 All Data Reports</option>
     </select>
     <button type="submit">Generate PDF Report</button>
@@ -117,7 +118,7 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     }
 
     // 👥 Accounts
-    if (type === "accounts" || type === "all") {
+    if (isAdmin && (type === "accounts" || type === "all")) {
       const { data, error } = await supabase
         .from("users")
         .select("id, full_name, username, email, contact_number");
