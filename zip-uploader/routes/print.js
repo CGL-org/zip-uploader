@@ -155,35 +155,37 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     }
 
     // 📌 Footer signatories
-    doc.moveDown(6);
     const currentUser = req.session?.user?.full_name || "Unknown User";
-    
-    // Fix Y position so both are aligned
-    const signY = doc.y;
-    
-    // Printed by (left)
+
+    // Align both on same Y line above footer
+    const signY = doc.page.height - 80; // fixed height above footer
     doc.fontSize(12).fillColor("black").text(`Printed by: ${currentUser}`, 50, signY);
-    
-    // Approved by (right, same line)
     doc.text("Approved by: ________________________", 400, signY);
 
-    // ✅ Footer function
+    // 🌐 Footer link (always bottom-left)
     function addFooter(doc) {
-      const bottomY = doc.page.height - 40; // 40 = bottom margin
+      const bottomY = doc.page.height - 30; // bottom margin
       doc.fontSize(10).fillColor("gray").text(
         "https://bottle-scanner.onrender.com",
-        50, // X position (left margin)
-        bottomY
+        50, // left margin
+        bottomY,
+        { lineBreak: false }
       );
     }
 
     // Add footer to the first page
     addFooter(doc);
-    
+
     // Ensure footer is added on every new page
     doc.on("pageAdded", () => {
       addFooter(doc);
+
+      // also re-add signatories on new pages
+      const signYnew = doc.page.height - 80;
+      doc.fontSize(12).fillColor("black").text(`Printed by: ${currentUser}`, 50, signYnew);
+      doc.text("Approved by: ________________________", 400, signYnew);
     });
+
 
     // Finalize PDF
     doc.end();
