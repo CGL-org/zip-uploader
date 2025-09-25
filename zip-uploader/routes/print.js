@@ -130,10 +130,10 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       doc.fontSize(12).fillColor("black");
       const startY = doc.y;
       doc.text("ID", 50, startY);
-      doc.text("Full Name", 120, startY);
-      doc.text("Username", 280, startY);
-      doc.text("Email", 420, startY);
-      doc.text("Contact", 620, startY);
+      doc.text("Full Name", 240, startY);
+      doc.text("Username", 380, startY);
+      doc.text("Email", 520, startY);
+      doc.text("Contact", 700, startY);
 
       // Divider line
       doc.moveDown(0.2);
@@ -144,10 +144,10 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       data.forEach(acc => {
         const y = doc.y;
         doc.text(acc.id, 50, y, { width: 60 });
-        doc.text(acc.full_name || "-", 120, y, { width: 150 });
-        doc.text(acc.username || "-", 280, y, { width: 120 });
-        doc.text(acc.email || "-", 420, y, { width: 180 });
-        doc.text(acc.contact_number || "-", 620, y, { width: 100 });
+        doc.text(acc.full_name || "-", 240, y, { width: 150 });
+        doc.text(acc.username || "-", 380, y, { width: 120 });
+        doc.text(acc.email || "-", 520, y, { width: 180 });
+        doc.text(acc.contact_number || "-", 620, y, { width: 700 });
         doc.moveDown();
       });
 
@@ -157,16 +157,23 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     // 📌 Footer signatories
     doc.moveDown(6);
     const currentUser = req.session?.user?.full_name || "Unknown User";
-
+    
+    // Fix Y position so both are aligned
+    const signY = doc.y;
+    
     // Printed by (left)
-    doc.fontSize(12).fillColor("black").text(`Printed by: ${currentUser}`, 50, doc.y);
-
+    doc.fontSize(12).fillColor("black").text(`Printed by: ${currentUser}`, 50, signY);
+    
     // Approved by (right, same line)
-    doc.text("Approved by: ________________________", 400, doc.y);
+    doc.text("Approved by: ________________________", 400, signY);
 
-    // 🌐 Website footer
-    doc.moveDown(4);
-    doc.fontSize(10).fillColor("gray").text("https://bottle-scanner.onrender.com", { align: "center" });
+      // 🌐 Website footer (bottom-left)
+      const bottomY = doc.page.height - 40; // 40 = bottom margin
+      doc.fontSize(10).fillColor("gray").text(
+        "https://bottle-scanner.onrender.com",
+        50, // X position (left margin)
+        bottomY
+      );
 
     // Finalize PDF
     doc.end();
