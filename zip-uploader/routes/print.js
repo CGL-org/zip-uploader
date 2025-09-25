@@ -123,12 +123,11 @@ if (type === "accounts" || type === "all") {
   doc.moveDown(0.5);
 
   // Table header
-  doc.fontSize(12).fillColor("black");
-  doc.text("ID", 50, doc.y, { continued: false });
-  doc.text("Full Name", 200, doc.y, { continued: false });
-  doc.text("Username", 350, doc.y, { continued: false });
-  doc.text("Email", 470, doc.y, { continued: false });
-  doc.text("Contact", 650, doc.y);
+    doc.text("ID", 50, startY);
+    doc.text("Full Name", 120, startY);
+    doc.text("Username", 280, startY);
+    doc.text("Email", 420, startY);
+    doc.text("Contact", 620, startY);
 
   // Divider line
   doc.moveDown(0.2);
