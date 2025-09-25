@@ -112,29 +112,43 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     }
 
     // 👥 Accounts
-    if (type === "accounts" || type === "all") {
-      const { data, error } = await supabase
-        .from("users")
-        .select("id, full_name, username, email, contact_number");
-      if (error) throw error;
-// Table header
-doc.fontSize(12).fillColor("black").text(
-  "ID        Full Name                Username             Email                     Contact",
-  { continued: false }
-);
-doc.moveDown(0.2);
-doc.moveTo(doc.x, doc.y).lineTo(750, doc.y).stroke();
-doc.moveDown(0.5);
+// 👥 Accounts
+if (type === "accounts" || type === "all") {
+  const { data, error } = await supabase
+    .from("users")
+    .select("id, full_name, username, email, contact_number");
+  if (error) throw error;
 
-// Rows
-data.forEach(acc => {
-  doc.text(
-    `${acc.id}   ${acc.full_name}   ${acc.username}   ${acc.email || "-"}   ${acc.contact_number || "-"}`,
-    { continued: false }
-  );
-});
-      doc.moveDown();
-    }
+  doc.fontSize(14).fillColor("#009688").text("User Accounts");
+  doc.moveDown(0.5);
+
+  // Table header
+  doc.fontSize(12).fillColor("black");
+  doc.text("ID", 50, doc.y, { continued: false });
+  doc.text("Full Name", 200, doc.y, { continued: false });
+  doc.text("Username", 350, doc.y, { continued: false });
+  doc.text("Email", 470, doc.y, { continued: false });
+  doc.text("Contact", 650, doc.y);
+
+  // Divider line
+  doc.moveDown(0.2);
+  doc.moveTo(50, doc.y).lineTo(750, doc.y).stroke();
+  doc.moveDown(0.5);
+
+  // Rows
+  data.forEach(acc => {
+    const y = doc.y;
+    doc.text(acc.id, 50, y, { width: 140 });
+    doc.text(acc.full_name, 200, y, { width: 130 });
+    doc.text(acc.username, 350, y, { width: 100 });
+    doc.text(acc.email || "-", 470, y, { width: 170 });
+    doc.text(acc.contact_number || "-", 650, y);
+    doc.moveDown();
+  });
+
+  doc.moveDown();
+}
+
 
     // Footer signatory
     doc.moveDown(4);
