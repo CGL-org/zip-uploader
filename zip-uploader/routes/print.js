@@ -158,7 +158,7 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     const currentUser = req.session?.user?.full_name || "Unknown User";
 
     // Align both on same Y line above footer
-    const signY = doc.page.height - 80; // fixed height above footer
+    const signY = doc.page.height - 150; // fixed height above footer
     doc.fontSize(12).fillColor("black").text(`Printed by: ${currentUser}`, 50, signY);
     doc.text("Approved by: ________________________", 400, signY);
 
@@ -181,7 +181,7 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       addFooter(doc);
 
       // also re-add signatories on new pages
-      const signYnew = doc.page.height - 80;
+      const signYnew = doc.page.height - 150;
       doc.fontSize(12).fillColor("black").text(`Printed by: ${currentUser}`, 50, signYnew);
       doc.text("Approved by: ________________________", 400, signYnew);
     });
