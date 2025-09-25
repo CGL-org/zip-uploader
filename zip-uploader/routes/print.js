@@ -84,7 +84,7 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     if (type === "received" || type === "all") {
       const { data, error } = await supabase.storage.from(RECEIVED_BUCKET).list();
       if (error) throw error;
-      doc.fontSize(14).fillColor("#009688").text("📥 Received Files");
+      doc.fontSize(14).fillColor("#009688").text("Received Files");
       doc.moveDown(0.5);
       data.forEach(f => doc.fontSize(12).fillColor("black").text(`- ${f.name}`));
       doc.moveDown();
@@ -94,7 +94,7 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     if (type === "extracted" || type === "all") {
       const { data, error } = await supabase.storage.from(EXTRACTED_BUCKET).list();
       if (error) throw error;
-      doc.fontSize(14).fillColor("#009688").text("📂 Extracted Files");
+      doc.fontSize(14).fillColor("#009688").text("Extracted Files");
       doc.moveDown(0.5);
       data.forEach(f => doc.fontSize(12).fillColor("black").text(`- ${f.name}`));
       doc.moveDown();
@@ -104,7 +104,7 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     if (type === "completed" || type === "all") {
       const { data, error } = await supabase.storage.from(COMPLETED_BUCKET).list();
       if (error) throw error;
-      doc.fontSize(14).fillColor("#009688").text("✅ Completed Files");
+      doc.fontSize(14).fillColor("#009688").text("Completed Files");
       doc.moveDown(0.5);
       data.forEach(f => doc.fontSize(12).fillColor("black").text(`- ${f.name}`));
       doc.moveDown();
@@ -116,7 +116,7 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
         .from("users")
         .select("id, full_name, username");
       if (error) throw error;
-      doc.fontSize(14).fillColor("#009688").text("👥 User Accounts");
+      doc.fontSize(14).fillColor("#009688").text("User Accounts");
       doc.moveDown(0.5);
       data.forEach(acc => {
         doc.fontSize(12).fillColor("black").text(`ID: ${acc.id} | Name: ${acc.full_name} | Username: ${acc.username}`);
