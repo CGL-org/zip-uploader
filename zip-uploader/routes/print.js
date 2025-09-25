@@ -123,6 +123,10 @@ if (type === "accounts" || type === "all") {
   doc.moveDown(0.5);
 
   // Table header
+    doc.fontSize(12).fillColor("black");
+    
+    const startY = doc.y; // keep same Y for all headers
+    
     doc.text("ID", 50, startY);
     doc.text("Full Name", 120, startY);
     doc.text("Username", 280, startY);
