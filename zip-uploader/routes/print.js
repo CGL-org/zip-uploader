@@ -117,11 +117,22 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
         .from("users")
         .select("id, full_name, username, email, contact_number");
       if (error) throw error;
-      doc.fontSize(14).fillColor("#009688").text("User Accounts");
-      doc.moveDown(0.5);
-      data.forEach(acc => {
-        doc.fontSize(12).fillColor("black").text(`ID: ${acc.id} | Name: ${acc.full_name} | Username: ${acc.username}`);
-      });
+// Table header
+doc.fontSize(12).fillColor("black").text(
+  "ID        Full Name                Username             Email                     Contact",
+  { continued: false }
+);
+doc.moveDown(0.2);
+doc.moveTo(doc.x, doc.y).lineTo(750, doc.y).stroke();
+doc.moveDown(0.5);
+
+// Rows
+data.forEach(acc => {
+  doc.text(
+    `${acc.id}   ${acc.full_name}   ${acc.username}   ${acc.email || "-"}   ${acc.contact_number || "-"}`,
+    { continued: false }
+  );
+});
       doc.moveDown();
     }
 
