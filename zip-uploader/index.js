@@ -39,7 +39,7 @@ app.use(
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
+app.use("/print", requireLogin, printRoutes);
 // ✅ Session must come before routes
 // ✅ Session must come before routes
 app.use(
