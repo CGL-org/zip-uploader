@@ -39,8 +39,7 @@ app.use(
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use("/print", requireLogin, printRoutes);
-// ✅ Session must come before routes
+
 // ✅ Session must come before routes
 app.use(
   session({
@@ -50,8 +49,14 @@ app.use(
   })
 );
 
-// ✅ Routes (after session middleware)
-app.use("/print", printRoutes);
+// Middleware for auth
+function requireLogin(req, res, next) {
+  if (!req.session.user) return res.redirect("/login");
+  next();
+}
+
+// ✅ Routes (after session)
+app.use("/print", requireLogin, printRoutes);
 
 
 // Multer
@@ -68,11 +73,7 @@ async function getFileList() {
   });
 }
 
-// Middleware for auth
-function requireLogin(req, res, next) {
-  if (!req.session.user) return res.redirect("/login");
-  next();
-}
+
 
 // ---------- LOGIN PAGE ----------
 app.get("/login", (req, res) => {
