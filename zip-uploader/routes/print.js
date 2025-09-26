@@ -69,7 +69,7 @@ button:hover { background:#00796b; }
 // 📊 Generate PDF reports
 router.post("/generate", express.urlencoded({ extended: true }), async (req, res) => {
   const type = req.body.reportType;
-
+   const isAdmin = req.session.user?.role === "admin";
   try {
     // Create PDF
     const landscape = (type === "accounts" || type === "all");
@@ -93,7 +93,11 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       if (error) throw error;
       doc.fontSize(14).fillColor("#009688").text("Received Files");
       doc.moveDown(0.5);
-      data.forEach(f => doc.fontSize(12).fillColor("black").text(`- ${f.name}`));
+      if (data && data.length > 0) {
+           data.forEach(f => doc.fontSize(12).fillColor("black").text(`- ${f.name}`));
+         } else {
+           doc.fontSize(12).fillColor("gray").text("No files found.");
+         }
       doc.moveDown();
     }
 
@@ -103,7 +107,11 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       if (error) throw error;
       doc.fontSize(14).fillColor("#009688").text("Extracted Files");
       doc.moveDown(0.5);
-      data.forEach(f => doc.fontSize(12).fillColor("black").text(`- ${f.name}`));
+      if (data && data.length > 0) {
+           data.forEach(f => doc.fontSize(12).fillColor("black").text(`- ${f.name}`));
+         } else {
+           doc.fontSize(12).fillColor("gray").text("No files found.");
+         }
       doc.moveDown();
     }
 
@@ -195,10 +203,20 @@ doc.on("pageAdded", () => {
 
     // Finalize PDF
     doc.end();
-  } catch (err) {
-    console.error("Error generating report:", err.message);
-    res.status(500).send(`<p style="color:red;">Error generating report: ${err.message}</p>`);
+} catch (err) {
+  console.error("Error generating report:", err.message);
+  if (!res.headersSent) {
+    res.setHeader("Content-Type", "text/plain");
   }
+  res.status(500).send("Error generating PDF: " + err.message);
+}
+
+  // Reset headers to plain text so the browser doesn't try to parse as PDF
+  if (!res.headersSent) {
+    res.setHeader("Content-Type", "text/plain");
+  }
+  res.status(500).send("Error generating PDF: " + err.message);
+}
 });
 
 
