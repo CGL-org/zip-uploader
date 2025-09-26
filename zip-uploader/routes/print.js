@@ -18,7 +18,7 @@ const COMPLETED_BUCKET = "Completed";
 
 // 📑 Print page (selection)
 router.get("/", (req, res) => {
-   const isAdmin = req.session.user?.role === "admin";
+  const isAdmin = req.session.user?.role === "admin";
   res.send(`
 <html>
 <head>
@@ -69,7 +69,8 @@ button:hover { background:#00796b; }
 // 📊 Generate PDF reports
 router.post("/generate", express.urlencoded({ extended: true }), async (req, res) => {
   const type = req.body.reportType;
-   const isAdmin = req.session.user?.role === "admin";
+  const isAdmin = req.session.user?.role === "admin";
+
   try {
     // Create PDF
     const landscape = (type === "accounts" || type === "all");
@@ -94,10 +95,10 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       doc.fontSize(14).fillColor("#009688").text("Received Files");
       doc.moveDown(0.5);
       if (data && data.length > 0) {
-           data.forEach(f => doc.fontSize(12).fillColor("black").text(`- ${f.name}`));
-         } else {
-           doc.fontSize(12).fillColor("gray").text("No files found.");
-         }
+        data.forEach(f => doc.fontSize(12).fillColor("black").text(`- ${f.name}`));
+      } else {
+        doc.fontSize(12).fillColor("gray").text("No files found.");
+      }
       doc.moveDown();
     }
 
@@ -108,10 +109,10 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       doc.fontSize(14).fillColor("#009688").text("Extracted Files");
       doc.moveDown(0.5);
       if (data && data.length > 0) {
-           data.forEach(f => doc.fontSize(12).fillColor("black").text(`- ${f.name}`));
-         } else {
-           doc.fontSize(12).fillColor("gray").text("No files found.");
-         }
+        data.forEach(f => doc.fontSize(12).fillColor("black").text(`- ${f.name}`));
+      } else {
+        doc.fontSize(12).fillColor("gray").text("No files found.");
+      }
       doc.moveDown();
     }
 
@@ -121,7 +122,11 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       if (error) throw error;
       doc.fontSize(14).fillColor("#009688").text("Completed Files");
       doc.moveDown(0.5);
-      data.forEach(f => doc.fontSize(12).fillColor("black").text(`- ${f.name}`));
+      if (data && data.length > 0) {
+        data.forEach(f => doc.fontSize(12).fillColor("black").text(`- ${f.name}`));
+      } else {
+        doc.fontSize(12).fillColor("gray").text("No files found.");
+      }
       doc.moveDown();
     }
 
@@ -163,61 +168,47 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       doc.moveDown();
     }
 
-// 📌 Footer signatories and footer link
-const currentUser = req.session?.user?.full_name || "Unknown User";
-const margin = 50; // left/right margin
-const signText = "Approved by: ________________________";
+    // 📌 Footer signatories and footer link
+    const currentUser = req.session?.user?.full_name || "Unknown User";
+    const margin = 50; // left/right margin
+    const signText = "Approved by: ________________________";
 
-function addSignatories(doc) {
-  const signY = doc.page.height - 150; // fixed height above footer
+    function addSignatories(doc) {
+      const signY = doc.page.height - 150; // fixed height above footer
+      doc.fontSize(12).fillColor("black").text(`Printed by: ${currentUser}`, margin, signY);
+      const approvedX = doc.page.width - margin - doc.widthOfString(signText);
+      doc.text(signText, approvedX, signY);
+    }
 
-  // Printed by (left)
-  doc.fontSize(12).fillColor("black").text(`Printed by: ${currentUser}`, margin, signY);
+    function addFooter(doc) {
+      const bottomY = doc.page.height - 30; // bottom margin
+      doc.fontSize(10).fillColor("gray").text(
+        "https://bottle-scanner.onrender.com",
+        margin,
+        bottomY,
+        { lineBreak: false }
+      );
+    }
 
-  // Approved by (right)
-  const approvedX = doc.page.width - margin - doc.widthOfString(signText);
-  doc.text(signText, approvedX, signY);
-}
+    // Add to first page
+    addSignatories(doc);
+    addFooter(doc);
 
-function addFooter(doc) {
-  const bottomY = doc.page.height - 30; // bottom margin
-  doc.fontSize(10).fillColor("gray").text(
-    "https://bottle-scanner.onrender.com",
-    margin, // left margin
-    bottomY,
-    { lineBreak: false }
-  );
-}
-
-// Add to first page
-addSignatories(doc);
-addFooter(doc);
-
-// Ensure signatories and footer are added on every new page
-doc.on("pageAdded", () => {
-  addSignatories(doc);
-  addFooter(doc);
-});
-
-
+    // Ensure signatories and footer are added on every new page
+    doc.on("pageAdded", () => {
+      addSignatories(doc);
+      addFooter(doc);
+    });
 
     // Finalize PDF
     doc.end();
-} catch (err) {
-  console.error("Error generating report:", err.message);
-  if (!res.headersSent) {
-    res.setHeader("Content-Type", "text/plain");
+  } catch (err) {
+    console.error("Error generating report:", err.message);
+    if (!res.headersSent) {
+      res.setHeader("Content-Type", "text/plain");
+    }
+    res.status(500).send("Error generating PDF: " + err.message);
   }
-  res.status(500).send("Error generating PDF: " + err.message);
-}
-
-  // Reset headers to plain text so the browser doesn't try to parse as PDF
-  if (!res.headersSent) {
-    res.setHeader("Content-Type", "text/plain");
-  }
-  res.status(500).send("Error generating PDF: " + err.message);
-}
 });
-
 
 export default router;
