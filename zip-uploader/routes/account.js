@@ -462,14 +462,7 @@ router.get("/edit/:id", async (req, res) => {
       </head>
       <body>
         <header>Edit user</header>
-        <button id="menuBtn">☰ Menu</button>
-        <div id="sidebar" class="sidebar">
-          <a href="/">🏠 Dashboard</a>
-          <a href="/extracted">📂 Extracted Files</a>
-          <a href="/done">✅ Check and Completed</a>
-          <a href="/account">👥 Accounts</a>
-          <a href="/logout">🚪 Logout</a>
-        </div>
+        
         <div class="content" id="mainContent">
           <div class="container">
             <form method="POST" action="/account/edit/${u.id}" enctype="multipart/form-data">
