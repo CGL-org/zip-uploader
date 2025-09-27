@@ -244,6 +244,7 @@ if (isAdmin) {
       <a href="/done">✅ Check and Completed</a>
       <a href="/print">🖨 Print Reports</a>
       ${isAdmin ? `<a href="/account">👥 Accounts</a>` : ""}
+      <li><a href="/logpage">📜 Operation Logs</a></li>
       <a href="/logout">🚪 Logout</a>
     `;
 
