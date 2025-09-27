@@ -12,7 +12,7 @@ import doneRouter from "./routes/done.js";
 import accountRoutes from "./routes/account.js";
 import bcrypt from "bcryptjs";
 import printRoutes from "./routes/print.js";
-
+import { logAction } from "./utils/logger.js";
 dotenv.config();
 
 // Supabase config
@@ -149,6 +149,8 @@ app.post("/login", async (req, res) => {
       role: user.user_type ? user.user_type : "user",
       profile_photo: user.profile_photo || null
     };
+await logAction(req, "login");
+    
 
     res.redirect("/");
   } catch (err) {
@@ -161,6 +163,7 @@ app.post("/login", async (req, res) => {
 app.get("/logout", (req, res) => {
   req.session.destroy(() => res.redirect("/login"));
 });
+await logAction(req, "logout");
 
 // ---------- DASHBOARD ----------
 app.get("/", requireLogin, async (req, res) => {
