@@ -160,10 +160,11 @@ await logAction(req, "login");
 });
 
 // Logout
-app.get("/logout", (req, res) => {
+app.get("/logout", async (req, res) => {
+  await logAction(req, "logout"); 
   req.session.destroy(() => res.redirect("/login"));
 });
-await logAction(req, "logout");
+
 
 // ---------- DASHBOARD ----------
 app.get("/", requireLogin, async (req, res) => {
