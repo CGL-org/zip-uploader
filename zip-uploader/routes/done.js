@@ -39,6 +39,15 @@ router.get("/", async (req, res) => {
       })
     );
 
+
+   await supabase.from("operation_logs").insert([
+      {
+        username: req.session.user?.full_name || "Unknown",
+        role: req.session.user?.role || "user",
+        action: "Viewed Completed Files page"
+      }
+    ]);
+    
     res.send(`
 <html>
 <head>
@@ -260,6 +269,14 @@ router.get("/:folder/list", async (req, res) => {
       return { ...f, publicUrl: g?.data?.publicUrl || null };
     });
 
+await supabase.from("operation_logs").insert([
+  {
+    username: req.session.user?.full_name || "Unknown",
+    role: req.session.user?.role || "user",
+    action: `Viewed folder contents in Completed: ${folder}`
+  }
+]);
+    
     res.json({ files });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -276,6 +293,16 @@ router.delete("/:folder/delete", async (req, res) => {
     if (!files || files.length === 0) return res.status(404).json({ error: "Folder not found" });
 
     await supabase.storage.from(DONE_BUCKET).remove(files.map(f => `${folder}/${f.name}`));
+
+ 
+    await supabase.from("operation_logs").insert([
+      {
+        username: req.session.user?.full_name || "Unknown",
+        role: req.session.user?.role || "user",
+        action: `Deleted folder from Completed: ${folder}`
+      }
+    ]);
+    
     res.json({ success: true, message: `Folder ${folder} deleted.` });
   } catch (err) {
     res.status(500).json({ error: err.message });
