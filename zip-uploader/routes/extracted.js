@@ -2,6 +2,7 @@
 import express from "express";
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
+import { logAction } from "../utils/logger.js";
 dotenv.config();
 
 const router = express.Router();
@@ -19,6 +20,8 @@ router.get("/", async (req, res) => {
     const isAdmin = req.session.user?.role === "admin";
     if (error) throw error;
 
+    await logAction(req, "view_extracted_files");
+    
     res.send(`
 <html>
 <head>
@@ -280,6 +283,9 @@ router.get("/:folder/list", async (req,res)=>{
   try{
     const {data,error}=await supabase.storage.from(EXTRACTED_BUCKET).list(folder);
     if(error) throw error;
+
+   await logAction(req, `preview_extracted_folder: ${folder}`);
+    
     const files=data.map(f=>{
       const g=supabase.storage.from(EXTRACTED_BUCKET).getPublicUrl(`${folder}/${f.name}`);
       return {...f,publicUrl:g?.data?.publicUrl||null};
@@ -308,7 +314,6 @@ router.post("/:folder/done", async (req, res) => {
 
       await supabase.storage.from(DONE_BUCKET).upload(path, fileData, { upsert: true });
     }
-
     // ✅ Correct — proper template literal
 function formatDateTime() {
   const now = new Date();
@@ -333,6 +338,9 @@ await supabase.storage
       .from(EXTRACTED_BUCKET)
       .remove(files.map(f => `${folder}/${f.name}`));
 
+
+  await logAction(req, `mark_done: ${folder}`);
+    
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
