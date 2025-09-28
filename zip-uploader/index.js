@@ -13,6 +13,7 @@ import accountRoutes from "./routes/account.js";
 import bcrypt from "bcryptjs";
 import printRoutes from "./routes/print.js";
 import { logAction } from "./utils/logger.js";
+import logpageRoutes from "./routes/logpage.js";
 dotenv.config();
 
 // Supabase config
@@ -568,6 +569,7 @@ app.post("/upload-zip", upload.single("file"), async (req, res) => {
 app.use("/extracted", requireLogin, extractedRoutes);
 app.use("/done", requireLogin, doneRouter);
 app.use("/account", requireLogin, accountRoutes);
+app.use("/logpage", requireLogin, logpageRoutes);
 
 // Start server
 const PORT = process.env.PORT || 3000;
