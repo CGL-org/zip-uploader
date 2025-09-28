@@ -42,6 +42,27 @@ router.get("/", async (req, res) => {
       .order("created_at", { ascending: false });
     if (error) throw error;
 
+
+      if (req.query.cancel === "create") {
+      await supabase.from("operation_logs").insert([
+        {
+          username: req.session.user?.full_name || "Unknown",
+          role: req.session.user?.role || "user",
+          action: "Cancelled Create Account"
+        }
+      ]);
+    }
+
+    if (req.query.cancel === "edit") {
+      await supabase.from("operation_logs").insert([
+        {
+          username: req.session.user?.full_name || "Unknown",
+          role: req.session.user?.role || "user",
+          action: "Cancelled Edit Account"
+        }
+      ]);
+    }
+    
     res.send(`
 <!DOCTYPE html>
 <html>
@@ -168,6 +189,15 @@ searchInput.addEventListener("input", () => {
 
 // ================== CREATE FORM ==================
 router.get("/create", (req, res) => {
+
+await supabase.from("operation_logs").insert([
+    {
+      username: req.session.user?.full_name || "Unknown",
+      role: req.session.user?.role || "user",
+      action: "Visited Create Account page"
+    }
+  ]);
+  
   res.send(`
     <!doctype html>
     <html>
@@ -350,7 +380,7 @@ router.get("/create", (req, res) => {
 
             <div class="actions">
               <button type="submit">Create Account</button>
-              <a href="/account">Cancel</a>
+              <a href="/account?cancel=create">Cancel</a>
             </div>
           </form>
         </div>
@@ -422,6 +452,14 @@ router.post("/create", upload.single("profile"), async (req, res) => {
       return res.status(500).send("Failed to create account: " + error.message);
     }
 
+await supabase.from("operation_logs").insert([
+  {
+    username: req.session.user?.full_name || "Unknown",
+    role: req.session.user?.role || "user",
+    action: `Created account: ${username}`
+  }
+]);
+    
     res.redirect("/account");
   } catch (err) {
     console.error("Create error:", err);
@@ -436,6 +474,14 @@ router.get("/edit/:id", async (req, res) => {
     const { data: u, error } = await supabase.from("users").select("*").eq("id", id).single();
     if (error) throw error;
 
+await supabase.from("operation_logs").insert([
+  {
+    username: req.session.user?.full_name || "Unknown",
+    role: req.session.user?.role || "user",
+    action: `Visited Edit Account page for user ID: ${id}`
+  }
+]);
+    
     res.send(`
       <!doctype html>
       <html>
@@ -506,7 +552,7 @@ router.get("/edit/:id", async (req, res) => {
 
               <div style="margin-top:12px; display:flex; gap:8px;">
                 <button type="submit">Save</button>
-                <a href="/account" style="align-self:center; margin-left:8px;">Cancel</a>
+                <a href="/account?cancel=edit" style="align-self:center; margin-left:8px;">Cancel</a>
               </div>
             </form>
           </div>
@@ -577,6 +623,14 @@ router.post("/edit/:id", upload.single("profile"), async (req, res) => {
     const { error } = await supabase.from("users").update(updates).eq("id", id);
     if (error) throw error;
 
+await supabase.from("operation_logs").insert([
+  {
+    username: req.session.user?.full_name || "Unknown",
+    role: req.session.user?.role || "user",
+    action: `Updated account ID: ${id}`
+  }
+]);
+    
     res.redirect("/account");
   } catch (err) {
     console.error(err);
@@ -591,6 +645,14 @@ router.post("/delete/:id", async (req, res) => {
     const { error } = await supabase.from("users").delete().eq("id", id);
     if (error) throw error;
 
+await supabase.from("operation_logs").insert([
+  {
+    username: req.session.user?.full_name || "Unknown",
+    role: req.session.user?.role || "user",
+    action: `Deleted account ID: ${id}`
+  }
+]);
+    
     res.redirect("/account");
   } catch (err) {
     console.error(err);
