@@ -188,17 +188,17 @@ searchInput.addEventListener("input", () => {
 
 
 // ================== CREATE FORM ==================
-router.get("/create", (req, res) => {
+router.get("/create", async (req, res) => {
+  try {
+    await supabase.from("operation_logs").insert([
+      {
+        username: req.session.user?.full_name || "Unknown",
+        role: req.session.user?.role || "user",
+        action: "Visited Create Account page"
+      }
+    ]);
 
-await supabase.from("operation_logs").insert([
-    {
-      username: req.session.user?.full_name || "Unknown",
-      role: req.session.user?.role || "user",
-      action: "Visited Create Account page"
-    }
-  ]);
-  
-  res.send(`
+    res.send(`
     <!doctype html>
     <html>
     <head>
