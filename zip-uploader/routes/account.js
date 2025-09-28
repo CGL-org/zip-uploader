@@ -198,6 +198,8 @@ router.get("/create", async (req, res) => {
       }
     ]);
 
+
+    
     res.send(`
     <!doctype html>
     <html>
@@ -396,9 +398,13 @@ router.get("/create", async (req, res) => {
       </script>
     </body>
     </html>
-  `);
+    `);
+  } catch (err) {
+    console.error("Error loading create form:", err);
+    res.status(500).send("Error loading create form: " + err.message);
+  }
 });
-
+ 
 
 // ================== HANDLE CREATE ==================
 router.post("/create", upload.single("profile"), async (req, res) => {
