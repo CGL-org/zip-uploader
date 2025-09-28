@@ -9,7 +9,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 export async function logAction(req, action) {
   try {
-    const username = req.session?.user?.username || "Unknown User";
+    const username = req.session?.user?.full_name || "Unknown User";
     const role = req.session?.user?.role || "N/A";
 
     await supabase.from("operation_logs").insert([
