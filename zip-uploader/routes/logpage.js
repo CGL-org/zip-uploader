@@ -130,14 +130,8 @@ router.get("/print-logs", async (req, res) => {
     .order("created_at", { ascending: false });
 
   if (query && column) {
-    if (column === "created_at") {
-      // crude date search by text match
-      supabaseQuery = supabaseQuery.ilike(column, \`%\${query}%\`);
-    } else {
-      supabaseQuery = supabaseQuery.ilike(column, \`%\${query}%\`);
-    }
+    supabaseQuery = supabaseQuery.ilike(column, `%${query}%`);
   }
-
   const { data, error } = await supabaseQuery;
   if (error) return res.status(500).send("Error fetching logs");
 
