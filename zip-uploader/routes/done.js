@@ -2,7 +2,7 @@
 import express from "express";
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
-
+import { logAction } from "../utils/logger.js";
 dotenv.config();
 const router = express.Router();
 
@@ -39,14 +39,8 @@ router.get("/", async (req, res) => {
       })
     );
 
+await logAction(req, "Viewed Completed Files page");
 
-   await supabase.from("operation_logs").insert([
-      {
-        username: req.session.user?.full_name || "Unknown",
-        role: req.session.user?.role || "user",
-        action: "Viewed Completed Files page"
-      }
-    ]);
     
     res.send(`
 <html>
