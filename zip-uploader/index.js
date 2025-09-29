@@ -249,7 +249,7 @@ if (isAdmin) {
       <a href="/done">✅ Check and Completed</a>
       <a href="/print">🖨 Print Reports</a>
       ${isAdmin ? `<a href="/account">👥 Accounts</a>` : ""}
-      <li><a href="/logpage">📜 Operation Logs</a></li>
+      ${isAdmin ? `<a href="/logpage">📜 Operation Logs</a>` : ""}
       <a href="/logout">🚪 Logout</a>
     `;
 
