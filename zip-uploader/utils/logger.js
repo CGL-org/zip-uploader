@@ -19,7 +19,7 @@ export async function logAction(req, action) {
       {
         action,
         username,
-        role
+        role,
          created_at: nowPH
       }
     ]);
