@@ -7,7 +7,7 @@ import multer from "multer";
 import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
 import bcrypt from "bcryptjs";
-
+import { logAction } from "../utils/logger.js";
 dotenv.config();
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -44,23 +44,11 @@ router.get("/", async (req, res) => {
 
 
       if (req.query.cancel === "create") {
-      await supabase.from("operation_logs").insert([
-        {
-          username: req.session.user?.full_name || "Unknown",
-          role: req.session.user?.role || "user",
-          action: "Cancelled Create Account"
-        }
-      ]);
+await logAction(req, "Cancelled Create Account");
     }
 
     if (req.query.cancel === "edit") {
-      await supabase.from("operation_logs").insert([
-        {
-          username: req.session.user?.full_name || "Unknown",
-          role: req.session.user?.role || "user",
-          action: "Cancelled Edit Account"
-        }
-      ]);
+      await logAction(req, "Cancelled Edit Account");
     }
     
     res.send(`
@@ -190,14 +178,8 @@ searchInput.addEventListener("input", () => {
 // ================== CREATE FORM ==================
 router.get("/create", async (req, res) => {
   try {
-    await supabase.from("operation_logs").insert([
-      {
-        username: req.session.user?.full_name || "Unknown",
-        role: req.session.user?.role || "user",
-        action: "Visited Create Account page"
-      }
-    ]);
 
+await logAction(req, "Visited Create Account page");
 
     
     res.send(`
@@ -458,13 +440,7 @@ router.post("/create", upload.single("profile"), async (req, res) => {
       return res.status(500).send("Failed to create account: " + error.message);
     }
 
-await supabase.from("operation_logs").insert([
-  {
-    username: req.session.user?.full_name || "Unknown",
-    role: req.session.user?.role || "user",
-    action: `Created account: ${username}`
-  }
-]);
+await logAction(req, `Created account: ${username}`);
     
     res.redirect("/account");
   } catch (err) {
@@ -480,13 +456,9 @@ router.get("/edit/:id", async (req, res) => {
     const { data: u, error } = await supabase.from("users").select("*").eq("id", id).single();
     if (error) throw error;
 
-await supabase.from("operation_logs").insert([
-  {
-    username: req.session.user?.full_name || "Unknown",
-    role: req.session.user?.role || "user",
-    action: `Visited Edit Account page for user ID: ${id}`
-  }
-]);
+
+
+    await logAction(req, `Visited Edit Account page for user ID: ${id}`);
     
     res.send(`
       <!doctype html>
@@ -629,13 +601,8 @@ router.post("/edit/:id", upload.single("profile"), async (req, res) => {
     const { error } = await supabase.from("users").update(updates).eq("id", id);
     if (error) throw error;
 
-await supabase.from("operation_logs").insert([
-  {
-    username: req.session.user?.full_name || "Unknown",
-    role: req.session.user?.role || "user",
-    action: `Updated account ID: ${id}`
-  }
-]);
+
+await logAction(req, `Updated account ID: ${id}`);
     
     res.redirect("/account");
   } catch (err) {
@@ -651,13 +618,8 @@ router.post("/delete/:id", async (req, res) => {
     const { error } = await supabase.from("users").delete().eq("id", id);
     if (error) throw error;
 
-await supabase.from("operation_logs").insert([
-  {
-    username: req.session.user?.full_name || "Unknown",
-    role: req.session.user?.role || "user",
-    action: `Deleted account ID: ${id}`
-  }
-]);
+
+await logAction(req, `Deleted account ID: ${id}`);
     
     res.redirect("/account");
   } catch (err) {
