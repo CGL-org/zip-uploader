@@ -12,11 +12,15 @@ export async function logAction(req, action) {
     const username = req.session?.user?.full_name || "Unknown User";
     const role = req.session?.user?.role || "N/A";
 
+    const nowPH = new Date().toLocaleString("sv-SE", { timeZone: "Asia/Manila" }).replace(" ", "T");
+
+    
     await supabase.from("operation_logs").insert([
       {
         action,
         username,
         role
+         created_at: nowPH
       }
     ]);
   } catch (err) {
