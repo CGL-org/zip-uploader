@@ -3,7 +3,7 @@ import express from "express";
 import { createClient } from "@supabase/supabase-js";
 import PDFDocument from "pdfkit";
 import dotenv from "dotenv";
-
+import { logAction } from "../utils/logger.js";
 dotenv.config();
 const router = express.Router();
 
@@ -20,14 +20,7 @@ const COMPLETED_BUCKET = "Completed";
 router.get("/", async (req, res) => {
   const isAdmin = req.session.user?.role === "admin";
 
-  // ✅ now await works
-  await supabase.from("operation_logs").insert([
-    {
-      username: req.session.user?.full_name || "Unknown",
-      role: req.session.user?.role || "user",
-      action: "Visited Print Reports page"
-    }
-  ]);
+await logAction(req, "Visited Print Reports page");
   
   res.send(`
 <html>
@@ -83,14 +76,7 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
 
   try {
 
-    await supabase.from("operation_logs").insert([
-      {
-        username: req.session.user?.full_name || "Unknown",
-        role: req.session.user?.role || "user",
-        action: `Generated PDF report: ${type.toUpperCase()}`
-      }
-    ]);
-    
+    await logAction(req, "Generated PDF report");
     // Create PDF
     const landscape = (type === "accounts" || type === "all");
     const doc = new PDFDocument({ margin: 40, layout: landscape ? "landscape" : "portrait" });
