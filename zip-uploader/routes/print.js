@@ -17,9 +17,10 @@ const EXTRACTED_BUCKET = "Extracted_Files";
 const COMPLETED_BUCKET = "Completed";
 
 // 📑 Print page (selection)
-router.get("/", (req, res) => {
+router.get("/", async (req, res) => {
   const isAdmin = req.session.user?.role === "admin";
 
+  // ✅ now await works
   await supabase.from("operation_logs").insert([
     {
       username: req.session.user?.full_name || "Unknown",
