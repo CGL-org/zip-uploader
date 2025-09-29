@@ -19,6 +19,15 @@ const COMPLETED_BUCKET = "Completed";
 // 📑 Print page (selection)
 router.get("/", (req, res) => {
   const isAdmin = req.session.user?.role === "admin";
+
+  await supabase.from("operation_logs").insert([
+    {
+      username: req.session.user?.full_name || "Unknown",
+      role: req.session.user?.role || "user",
+      action: "Visited Print Reports page"
+    }
+  ]);
+  
   res.send(`
 <html>
 <head>
@@ -72,6 +81,15 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
   const isAdmin = req.session.user?.role === "admin";
 
   try {
+
+    await supabase.from("operation_logs").insert([
+      {
+        username: req.session.user?.full_name || "Unknown",
+        role: req.session.user?.role || "user",
+        action: `Generated PDF report: ${type.toUpperCase()}`
+      }
+    ]);
+    
     // Create PDF
     const landscape = (type === "accounts" || type === "all");
     const doc = new PDFDocument({ margin: 40, layout: landscape ? "landscape" : "portrait" });
