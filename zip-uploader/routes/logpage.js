@@ -1,4 +1,3 @@
-// routes/logpage.js
 import express from "express";
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
@@ -10,7 +9,6 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ---------------- MAIN PAGE ----------------
 router.get("/", async (req, res) => {
   const { data, error } = await supabase
     .from("operation_logs")
@@ -121,7 +119,6 @@ document.getElementById("printBtn").addEventListener("click", () => {
   `);
 });
 
-// ---------------- PRINT PAGE ----------------
 router.get("/print-logs", async (req, res) => {
   const { column, query } = req.query;
 
