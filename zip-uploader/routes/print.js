@@ -202,11 +202,3 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
 
 export default router;
 
-
-i have just noticed that, printing for;
-received files
-extracted files
-completed files
-
-is not included the date, 
-can we have it include in print? for those three type of print?
