@@ -151,7 +151,7 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     doc.moveDown();
     doc.fontSize(20).fillColor("#004d40").text(`Report: ${type.toUpperCase()}`, { align: "center" });
     doc.moveDown();
-    doc.y = 80; // Reserve header space
+    doc.y = 120; // Reserve header space
 
     // CONTENT
     if (receivedFiles.length || type === "received" || type === "all") {
