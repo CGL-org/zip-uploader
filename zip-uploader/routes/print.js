@@ -79,6 +79,7 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     const doc = new PDFDocument({ margin: 40, layout: landscape ? "landscape" : "portrait" });
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `inline; filename="report-${type}.pdf"`);
+    const doc = new PDFDocument({ margin: 40, layout: landscape ? "landscape" : "portrait" });
     doc.pipe(res);
 
     const now = new Date().toLocaleString("en-PH", { timeZone: "Asia/Manila" });
