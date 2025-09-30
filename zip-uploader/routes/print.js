@@ -75,12 +75,12 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
 
     await logAction(req, "Generated PDF report");
 
-    const landscape = (type === "accounts" || type === "all");
-    const doc = new PDFDocument({ margin: 40, layout: landscape ? "landscape" : "portrait" });
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `inline; filename="report-${type}.pdf"`);
-    const doc = new PDFDocument({ margin: 40, layout: landscape ? "landscape" : "portrait" });
-    doc.pipe(res);
+const landscape = (type === "accounts" || type === "all");
+res.setHeader("Content-Type", "application/pdf");
+res.setHeader("Content-Disposition", `inline; filename="report-${type}.pdf"`);
+
+const doc = new PDFDocument({ margin: 40, layout: landscape ? "landscape" : "portrait" });
+doc.pipe(res);
 
     const now = new Date().toLocaleString("en-PH", { timeZone: "Asia/Manila" });
     doc.fontSize(10).fillColor("gray").text(`Date Printed: ${now}`, { align: "right" });
