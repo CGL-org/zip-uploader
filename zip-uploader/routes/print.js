@@ -112,33 +112,33 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     const signText = "Approved by: ________________________";
     const bottomReservedSpace = 80;
 
-    // --- Footer + Signatories (absolute positioning) ---
-    function addFooterAndSignatories(doc) {
+    // --- Draw footer and signatories at absolute positions ---
+    function addFooterAndSignatories() {
+      // Footer
       const bottomY = doc.page.height - 30;
-      const signY = doc.page.height - 60;
-
-      // Footer link
       doc.fontSize(10).fillColor("gray").text(
         "https://bottle-scanner.onrender.com",
         50,
         bottomY,
-        { lineBreak: false, continued: false, width: 500 }
+        { lineBreak: false }
       );
 
-      // Printed by + Approved by (absolute coords, no wrapping)
+      // Signatories (aligned horizontally)
+      const signY = doc.page.height - 60;
       doc.fontSize(12).fillColor("black")
-         .text(`Printed by: ${currentUser}`, 50, signY, { lineBreak: false });
+        .text(`Printed by: ${currentUser}`, 50, signY);
 
       const approvedX = doc.page.width - 50 - doc.widthOfString(signText);
-      doc.text(signText, approvedX, signY, { lineBreak: false });
+      doc.text(signText, approvedX, signY);
     }
 
-    // Hook for all new pages
+    // Ensure footer is drawn on every page
+    addFooterAndSignatories();
     doc.on("pageAdded", () => {
-      addFooterAndSignatories(doc);
+      addFooterAndSignatories();
     });
 
-    function addTextWithAutoPage(doc, text) {
+    function addTextWithAutoPage(text) {
       const spaceNeeded = doc.heightOfString(text);
       if (doc.y + spaceNeeded > doc.page.height - bottomReservedSpace) {
         doc.addPage();
@@ -152,15 +152,15 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     doc.moveDown();
     doc.fontSize(20).fillColor("#004d40").text(`Report: ${type.toUpperCase()}`, { align: "center" });
     doc.moveDown();
-    doc.y = 80;
+    doc.y = 80; // Reserve vertical space for header
 
     // CONTENT SECTIONS
     if (receivedFiles.length || type === "received" || type === "all") {
       doc.fontSize(14).fillColor("#009688").text("Received Files");
       doc.moveDown(0.5);
       receivedFiles.length > 0
-        ? receivedFiles.forEach(f => addTextWithAutoPage(doc, `- ${f.name}`))
-        : addTextWithAutoPage(doc, "No files found.");
+        ? receivedFiles.forEach(f => addTextWithAutoPage(`- ${f.name}`))
+        : addTextWithAutoPage("No files found.");
       doc.moveDown();
     }
 
@@ -168,8 +168,8 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       doc.fontSize(14).fillColor("#009688").text("Extracted Files");
       doc.moveDown(0.5);
       extractedFiles.length > 0
-        ? extractedFiles.forEach(f => addTextWithAutoPage(doc, `- ${f.name}`))
-        : addTextWithAutoPage(doc, "No files found.");
+        ? extractedFiles.forEach(f => addTextWithAutoPage(`- ${f.name}`))
+        : addTextWithAutoPage("No files found.");
       doc.moveDown();
     }
 
@@ -177,8 +177,8 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       doc.fontSize(14).fillColor("#009688").text("Completed Files");
       doc.moveDown(0.5);
       completedFiles.length > 0
-        ? completedFiles.forEach(f => addTextWithAutoPage(doc, `- ${f.name}`))
-        : addTextWithAutoPage(doc, "No files found.");
+        ? completedFiles.forEach(f => addTextWithAutoPage(`- ${f.name}`))
+        : addTextWithAutoPage("No files found.");
       doc.moveDown();
     }
 
@@ -208,9 +208,6 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       });
       doc.moveDown();
     }
-
-    // Draw footer/signatories for first page
-    addFooterAndSignatories(doc);
 
     doc.end();
   } catch (err) {
