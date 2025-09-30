@@ -114,8 +114,10 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
 
     // --- Draw footer and signatories at absolute positions ---
     function addFooterAndSignatories(doc) {
-      // Footer
       const bottomY = doc.page.height - 30;
+      const signY = doc.page.height - 60;
+
+      // Footer link
       doc.fontSize(10).fillColor("gray").text(
         "https://bottle-scanner.onrender.com",
         50,
@@ -123,13 +125,18 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
         { lineBreak: false }
       );
 
-      // Signatories
-      const signY = doc.page.height - 60;
+      // Printed by + Approved by (aligned horizontally)
       doc.fontSize(12).fillColor("black")
          .text(`Printed by: ${currentUser}`, 50, signY);
+
       const approvedX = doc.page.width - 50 - doc.widthOfString(signText);
       doc.text(signText, approvedX, signY);
     }
+
+    // --- Ensure signatories on all pages ---
+    doc.on("pageAdded", () => {
+      addFooterAndSignatories(doc);
+    });
 
     function addTextWithAutoPage(doc, text) {
       const spaceNeeded = doc.heightOfString(text);
@@ -202,7 +209,7 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       doc.moveDown();
     }
 
-    // FOOTER & SIGNATORIES (once per page)
+    // Add footer/signatories for the first page
     addFooterAndSignatories(doc);
 
     doc.end();
