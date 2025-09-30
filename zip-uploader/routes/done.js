@@ -1,4 +1,3 @@
-// routes/done.js
 import express from "express";
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
@@ -12,7 +11,6 @@ const DONE_BUCKET = "Completed";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ✅ Completed files main page
 router.get("/", async (req, res) => {
   try {
     const { data, error } = await supabase.storage.from(DONE_BUCKET).list("");
@@ -251,7 +249,6 @@ searchInput.addEventListener("input", () => {
   }
 });
 
-// List contents of completed folder
 router.get("/:folder/list", async (req, res) => {
   const folder = req.params.folder;
   try {
@@ -272,7 +269,6 @@ await logAction(req, "Viewed folder contents in Completed");
   }
 });
 
-// Delete completed folder
 router.delete("/:folder/delete", async (req, res) => {
   const folder = req.params.folder;
   try {
