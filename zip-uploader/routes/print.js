@@ -113,24 +113,29 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     const bottomReservedSpace = 80;
 
     // --- Footer + Signatories ---
-    function addFooterAndSignatories() {
+    function addFooterAndSignatories(doc) {
       const bottomY = doc.page.height - 40;
 
       // Left (Printed by)
       doc.fontSize(11).fillColor("black")
-        .text(`Printed by: ${currentUser}`, 50, bottomY);
+        .text(`Printed by: ${currentUser}`, 50, bottomY, { lineBreak: false });
 
       // Right (Approved by)
       const approvedX = doc.page.width - 50 - doc.widthOfString(signText);
-      doc.text(signText, approvedX, bottomY);
+      doc.text(signText, approvedX, bottomY, { lineBreak: false });
 
-      // Centered URL footer below
+      // Centered URL footer
       doc.fontSize(9).fillColor("gray")
-        .text("https://bottle-scanner.onrender.com", 0, doc.page.height - 20, { align: "center" });
+        .text("https://bottle-scanner.onrender.com", 0, doc.page.height - 20, {
+          align: "center",
+          lineBreak: false
+        });
     }
 
-    // Attach footer to every page
-    doc.on("pageAdded", addFooterAndSignatories);
+    // Safe listener: draw footer on new pages
+    doc.on("pageAdded", () => {
+      addFooterAndSignatories(doc);
+    });
 
     function addTextWithAutoPage(text) {
       const spaceNeeded = doc.heightOfString(text);
@@ -146,9 +151,9 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     doc.moveDown();
     doc.fontSize(20).fillColor("#004d40").text(`Report: ${type.toUpperCase()}`, { align: "center" });
     doc.moveDown();
-    doc.y = 80; // Reserve space for header
+    doc.y = 80; // Reserve header space
 
-    // CONTENT SECTIONS
+    // CONTENT
     if (receivedFiles.length || type === "received" || type === "all") {
       doc.fontSize(14).fillColor("#009688").text("Received Files");
       doc.moveDown(0.5);
@@ -203,8 +208,8 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       doc.moveDown();
     }
 
-    // Footer for first page
-    addFooterAndSignatories();
+    // Footer on first page
+    addFooterAndSignatories(doc);
 
     doc.end();
   } catch (err) {
