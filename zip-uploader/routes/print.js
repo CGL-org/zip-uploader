@@ -112,11 +112,11 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     const signText = "Approved by: ________________________";
     const bottomReservedSpace = 80;
 
-    // --- Footer + Signatories (applies to each page) ---
+    // --- Footer + Signatories ---
     function addFooterAndSignatories(doc) {
-      const bottomY = doc.page.height - 30;
+      const bottomY = doc.page.height - 40;
 
-      // Footer URL
+      // Footer link
       doc.fontSize(10).fillColor("gray").text(
         "https://bottle-scanner.onrender.com",
         50,
@@ -124,16 +124,16 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
         { lineBreak: false }
       );
 
-      // Align Printed by + Approved by on same Y across all pages
-      const signY = doc.page.height - 60;
-      doc.fontSize(12).fillColor("black");
-      doc.text(`Printed by: ${currentUser}`, 50, signY);
+      // Align "Printed by" and "Approved by" horizontally at same Y
+      const signY = bottomY - 20;
+      doc.fontSize(12).fillColor("black")
+         .text(`Printed by: ${currentUser}`, 50, signY);
 
       const approvedX = doc.page.width - 50 - doc.widthOfString(signText);
       doc.text(signText, approvedX, signY);
     }
 
-    // Ensure every new page has the footer/signatories
+    // Make sure footer is added on every page
     doc.on("pageAdded", () => {
       addFooterAndSignatories(doc);
     });
@@ -209,7 +209,7 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       doc.moveDown();
     }
 
-    // Add footer + signatories to the first page
+    // FOOTER & SIGNATORIES on first page
     addFooterAndSignatories(doc);
 
     doc.end();
