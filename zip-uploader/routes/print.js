@@ -15,11 +15,20 @@ const RECEIVED_BUCKET = "Received_Files";
 const EXTRACTED_BUCKET = "Extracted_Files";
 const COMPLETED_BUCKET = "Completed";
 
+// ✅ Helper function to format dates to PH time
+function formatDateTimePH(isoString) {
+  return new Date(isoString).toLocaleString("en-PH", {
+    timeZone: "Asia/Manila",
+    dateStyle: "medium",
+    timeStyle: "short"
+  });
+}
+
 router.get("/", async (req, res) => {
   const isAdmin = req.session.user?.role === "admin";
 
-await logAction(req, "Visited Print Reports page");
-  
+  await logAction(req, "Visited Print Reports page");
+
   res.send(`
 <html>
 <head>
@@ -72,7 +81,6 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
   const isAdmin = req.session.user?.role === "admin";
 
   try {
-
     await logAction(req, "Generated PDF report");
 
     const landscape = (type === "accounts" || type === "all");
@@ -81,52 +89,65 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     res.setHeader("Content-Disposition", `inline; filename="report-${type}.pdf"`);
     doc.pipe(res);
 
-    const now = new Date().toLocaleString();
+    const now = new Date().toLocaleString("en-PH", { timeZone: "Asia/Manila" });
     doc.fontSize(10).fillColor("gray").text(`Date Printed: ${now}`, { align: "right" });
 
     doc.moveDown();
     doc.fontSize(20).fillColor("#004d40").text(`Report: ${type.toUpperCase()}`, { align: "center" });
     doc.moveDown();
 
+    // ✅ Received Files
     if (type === "received" || type === "all") {
       const { data, error } = await supabase.storage.from(RECEIVED_BUCKET).list();
       if (error) throw error;
       doc.fontSize(14).fillColor("#009688").text("Received Files");
       doc.moveDown(0.5);
       if (data && data.length > 0) {
-        data.forEach(f => doc.fontSize(12).fillColor("black").text(`- ${f.name}`));
+        data.forEach(f => {
+          const date = f.updated_at ? formatDateTimePH(f.updated_at) : "N/A";
+          doc.fontSize(12).fillColor("black").text(`- ${f.name}   (Date: ${date})`);
+        });
       } else {
         doc.fontSize(12).fillColor("gray").text("No files found.");
       }
       doc.moveDown();
     }
 
+    // ✅ Extracted Files
     if (type === "extracted" || type === "all") {
       const { data, error } = await supabase.storage.from(EXTRACTED_BUCKET).list();
       if (error) throw error;
       doc.fontSize(14).fillColor("#009688").text("Extracted Files");
       doc.moveDown(0.5);
       if (data && data.length > 0) {
-        data.forEach(f => doc.fontSize(12).fillColor("black").text(`- ${f.name}`));
+        data.forEach(f => {
+          const date = f.updated_at ? formatDateTimePH(f.updated_at) : "N/A";
+          doc.fontSize(12).fillColor("black").text(`- ${f.name}   (Date: ${date})`);
+        });
       } else {
         doc.fontSize(12).fillColor("gray").text("No files found.");
       }
       doc.moveDown();
     }
 
+    // ✅ Completed Files
     if (type === "completed" || type === "all") {
       const { data, error } = await supabase.storage.from(COMPLETED_BUCKET).list();
       if (error) throw error;
       doc.fontSize(14).fillColor("#009688").text("Completed Files");
       doc.moveDown(0.5);
       if (data && data.length > 0) {
-        data.forEach(f => doc.fontSize(12).fillColor("black").text(`- ${f.name}`));
+        data.forEach(f => {
+          const date = f.updated_at ? formatDateTimePH(f.updated_at) : "N/A";
+          doc.fontSize(12).fillColor("black").text(`- ${f.name}   (Date: ${date})`);
+        });
       } else {
         doc.fontSize(12).fillColor("gray").text("No files found.");
       }
       doc.moveDown();
     }
 
+    // ✅ User Accounts (Admin only)
     if (isAdmin && (type === "accounts" || type === "all")) {
       const { data, error } = await supabase
         .from("users")
@@ -161,19 +182,20 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       doc.moveDown();
     }
 
+    // ✅ Footer + Signatories
     const currentUser = req.session?.user?.full_name || "Unknown User";
-    const margin = 50; 
+    const margin = 50;
     const signText = "Approved by: ________________________";
 
     function addSignatories(doc) {
-      const signY = doc.page.height - 150; 
+      const signY = doc.page.height - 150;
       doc.fontSize(12).fillColor("black").text(`Printed by: ${currentUser}`, margin, signY);
       const approvedX = doc.page.width - margin - doc.widthOfString(signText);
       doc.text(signText, approvedX, signY);
     }
 
     function addFooter(doc) {
-      const bottomY = doc.page.height - 30; 
+      const bottomY = doc.page.height - 30;
       doc.fontSize(10).fillColor("gray").text(
         "https://bottle-scanner.onrender.com",
         margin,
