@@ -1,7 +1,3 @@
-// routes/account.js
-// Express router for user account CRUD with profile photo upload
-// Uses Supabase (service role key) for DB and storage.
-
 import express from "express";
 import multer from "multer";
 import dotenv from "dotenv";
@@ -23,7 +19,6 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Helper to get public URL for a stored file path
 function publicUrlFor(path) {
   try {
     const g = supabase.storage.from(USER_BUCKET).getPublicUrl(path);
@@ -33,7 +28,6 @@ function publicUrlFor(path) {
   }
 }
 
-// ================== LIST USERS ==================
 router.get("/", async (req, res) => {
   try {
     const { data: users, error } = await supabase
@@ -387,8 +381,6 @@ await logAction(req, "Visited Create Account page");
   }
 });
  
-
-// ================== HANDLE CREATE ==================
 router.post("/create", upload.single("profile"), async (req, res) => {
   try {
     const {
@@ -553,7 +545,6 @@ router.get("/edit/:id", async (req, res) => {
   }
 });
 
-// ================== HANDLE EDIT ==================
 router.post("/edit/:id", upload.single("profile"), async (req, res) => {
   try {
     const id = req.params.id;
