@@ -112,7 +112,7 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     const signText = "Approved by: ________________________";
     const bottomReservedSpace = 80;
 
-    // --- Draw footer and signatories at absolute positions ---
+    // --- Footer + Signatories (absolute positioning) ---
     function addFooterAndSignatories(doc) {
       const bottomY = doc.page.height - 30;
       const signY = doc.page.height - 60;
@@ -122,18 +122,18 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
         "https://bottle-scanner.onrender.com",
         50,
         bottomY,
-        { lineBreak: false }
+        { lineBreak: false, continued: false, width: 500 }
       );
 
-      // Printed by + Approved by (aligned horizontally)
+      // Printed by + Approved by (absolute coords, no wrapping)
       doc.fontSize(12).fillColor("black")
-         .text(`Printed by: ${currentUser}`, 50, signY);
+         .text(`Printed by: ${currentUser}`, 50, signY, { lineBreak: false });
 
       const approvedX = doc.page.width - 50 - doc.widthOfString(signText);
-      doc.text(signText, approvedX, signY);
+      doc.text(signText, approvedX, signY, { lineBreak: false });
     }
 
-    // --- Ensure signatories on all pages ---
+    // Hook for all new pages
     doc.on("pageAdded", () => {
       addFooterAndSignatories(doc);
     });
@@ -152,7 +152,7 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     doc.moveDown();
     doc.fontSize(20).fillColor("#004d40").text(`Report: ${type.toUpperCase()}`, { align: "center" });
     doc.moveDown();
-    doc.y = 80; // Reserve vertical space for header
+    doc.y = 80;
 
     // CONTENT SECTIONS
     if (receivedFiles.length || type === "received" || type === "all") {
@@ -209,7 +209,7 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       doc.moveDown();
     }
 
-    // Add footer/signatories for the first page
+    // Draw footer/signatories for first page
     addFooterAndSignatories(doc);
 
     doc.end();
