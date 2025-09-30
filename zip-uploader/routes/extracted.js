@@ -1,4 +1,3 @@
-// routes/extracted.js
 import express from "express";
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
@@ -13,7 +12,6 @@ const DONE_BUCKET = "Completed";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// 📂 Extracted files page
 router.get("/", async (req, res) => {
   try {
     const { data, error } = await supabase.storage.from(EXTRACTED_BUCKET).list("");
@@ -259,7 +257,6 @@ header { background:var(--brand); color:white; padding:15px; text-align:center; 
       document.getElementById("imageModal").style.display = "none";
     }
 
-  // ✅ Search bar functionality
   const searchInput = document.getElementById("searchInput");
   searchInput.addEventListener("input", () => {
     const filter = searchInput.value.toLowerCase();
@@ -277,7 +274,6 @@ header { background:var(--brand); color:white; padding:15px; text-align:center; 
   } catch (err) { res.status(500).send("Error: "+err.message); }
 });
 
-// list files
 router.get("/:folder/list", async (req,res)=>{
   const folder=req.params.folder;
   try{
@@ -294,7 +290,6 @@ router.get("/:folder/list", async (req,res)=>{
   }catch(err){res.status(500).json({error:err.message});}
 });
 
-// mark done
 router.post("/:folder/done", async (req, res) => {
   const folder = req.params.folder;
   try {
@@ -314,7 +309,7 @@ router.post("/:folder/done", async (req, res) => {
 
       await supabase.storage.from(DONE_BUCKET).upload(path, fileData, { upsert: true });
     }
-    // ✅ Correct — proper template literal
+
 function formatDateTime() {
   const now = new Date();
   const yyyy = now.getFullYear();
@@ -332,8 +327,6 @@ await supabase.storage
   .from(DONE_BUCKET)
   .upload(`${folder}/.completed.json`, JSON.stringify({ completedAt }), { upsert: true });
 
-
-    // ✅ Correct — map with template literal
     await supabase.storage
       .from(EXTRACTED_BUCKET)
       .remove(files.map(f => `${folder}/${f.name}`));
