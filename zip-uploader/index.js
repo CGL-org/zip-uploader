@@ -409,7 +409,7 @@ if (isAdmin) {
                 <td>${f.name}</td>
                 <td>${f.metadata?.mimetype || "N/A"}</td>
                 <td>${f.metadata?.size || "?"} bytes</td>
-                <td>${f.updated_at || "N/A"}</td>
+                <td>${f.updated_at ? new Date(f.updated_at).toLocaleString("en-PH", { timeZone: "Asia/Manila" }) : "N/A"}</td>
                 <td>${f.name.endsWith(".zip")
                   ? `<a href="/extract/${encodeURIComponent(f.name)}">Extract</a>`
                   : "-"}</td>
