@@ -112,10 +112,11 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     const signText = "Approved by: ________________________";
     const bottomReservedSpace = 80;
 
-    // --- Draw footer and signatories at absolute positions ---
-    function addFooterAndSignatories() {
-      // Footer
+    // --- Footer + Signatories (applies to each page) ---
+    function addFooterAndSignatories(doc) {
       const bottomY = doc.page.height - 30;
+
+      // Footer URL
       doc.fontSize(10).fillColor("gray").text(
         "https://bottle-scanner.onrender.com",
         50,
@@ -123,22 +124,21 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
         { lineBreak: false }
       );
 
-      // Signatories (aligned horizontally)
+      // Align Printed by + Approved by on same Y across all pages
       const signY = doc.page.height - 60;
-      doc.fontSize(12).fillColor("black")
-        .text(`Printed by: ${currentUser}`, 50, signY);
+      doc.fontSize(12).fillColor("black");
+      doc.text(`Printed by: ${currentUser}`, 50, signY);
 
       const approvedX = doc.page.width - 50 - doc.widthOfString(signText);
       doc.text(signText, approvedX, signY);
     }
 
-    // Ensure footer is drawn on every page
-    addFooterAndSignatories();
+    // Ensure every new page has the footer/signatories
     doc.on("pageAdded", () => {
-      addFooterAndSignatories();
+      addFooterAndSignatories(doc);
     });
 
-    function addTextWithAutoPage(text) {
+    function addTextWithAutoPage(doc, text) {
       const spaceNeeded = doc.heightOfString(text);
       if (doc.y + spaceNeeded > doc.page.height - bottomReservedSpace) {
         doc.addPage();
@@ -159,8 +159,8 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       doc.fontSize(14).fillColor("#009688").text("Received Files");
       doc.moveDown(0.5);
       receivedFiles.length > 0
-        ? receivedFiles.forEach(f => addTextWithAutoPage(`- ${f.name}`))
-        : addTextWithAutoPage("No files found.");
+        ? receivedFiles.forEach(f => addTextWithAutoPage(doc, `- ${f.name}`))
+        : addTextWithAutoPage(doc, "No files found.");
       doc.moveDown();
     }
 
@@ -168,8 +168,8 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       doc.fontSize(14).fillColor("#009688").text("Extracted Files");
       doc.moveDown(0.5);
       extractedFiles.length > 0
-        ? extractedFiles.forEach(f => addTextWithAutoPage(`- ${f.name}`))
-        : addTextWithAutoPage("No files found.");
+        ? extractedFiles.forEach(f => addTextWithAutoPage(doc, `- ${f.name}`))
+        : addTextWithAutoPage(doc, "No files found.");
       doc.moveDown();
     }
 
@@ -177,8 +177,8 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       doc.fontSize(14).fillColor("#009688").text("Completed Files");
       doc.moveDown(0.5);
       completedFiles.length > 0
-        ? completedFiles.forEach(f => addTextWithAutoPage(`- ${f.name}`))
-        : addTextWithAutoPage("No files found.");
+        ? completedFiles.forEach(f => addTextWithAutoPage(doc, `- ${f.name}`))
+        : addTextWithAutoPage(doc, "No files found.");
       doc.moveDown();
     }
 
@@ -208,6 +208,9 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       });
       doc.moveDown();
     }
+
+    // Add footer + signatories to the first page
+    addFooterAndSignatories(doc);
 
     doc.end();
   } catch (err) {
