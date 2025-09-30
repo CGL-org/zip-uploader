@@ -112,7 +112,7 @@ router.get("/", async (req, res) => {
 document.getElementById("printBtn").addEventListener("click", () => {
   const column = filterColumn.value;
   const query = searchInput.value;
-  window.open(`/logpage/print-logs?column=${column}&query=${encodeURIComponent(query)}`, "_blank");
+  window.open("/logpage/print-logs?column=" + column + "&query=" + encodeURIComponent(query), "_blank");
 });
 
       </script>
