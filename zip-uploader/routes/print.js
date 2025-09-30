@@ -166,7 +166,7 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     const signText = "Approved by: ________________________";
 
     function addSignatories(doc) {
-      const signY = doc.page.height - 150; 
+      const signY = doc.page.height - 50; 
       doc.fontSize(12).fillColor("black").text(`Printed by: ${currentUser}`, margin, signY);
       const approvedX = doc.page.width - margin - doc.widthOfString(signText);
       doc.text(signText, approvedX, signY);
