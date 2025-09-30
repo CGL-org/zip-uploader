@@ -112,16 +112,9 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     const signText = "Approved by: ________________________";
     const bottomReservedSpace = 80;
 
-    function addSignatories(doc) {
-      const y = doc.page.height - 60;
-      doc.fontSize(12).fillColor("black")
-        .text(`Printed by: ${currentUser}`, 50, y);
-
-      const approvedX = doc.page.width - 50 - doc.widthOfString(signText);
-      doc.text(signText, approvedX, y);
-    }
-
-    function addFooter(doc) {
+    // --- Draw footer and signatories at absolute positions ---
+    function addFooterAndSignatories(doc) {
+      // Footer
       const bottomY = doc.page.height - 30;
       doc.fontSize(10).fillColor("gray").text(
         "https://bottle-scanner.onrender.com",
@@ -129,22 +122,22 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
         bottomY,
         { lineBreak: false }
       );
+
+      // Signatories
+      const signY = doc.page.height - 60;
+      doc.fontSize(12).fillColor("black")
+         .text(`Printed by: ${currentUser}`, 50, signY);
+      const approvedX = doc.page.width - 50 - doc.widthOfString(signText);
+      doc.text(signText, approvedX, signY);
     }
 
     function addTextWithAutoPage(doc, text) {
       const spaceNeeded = doc.heightOfString(text);
       if (doc.y + spaceNeeded > doc.page.height - bottomReservedSpace) {
         doc.addPage();
-        doc.y = 80; // Start below header on new page
       }
       doc.text(text);
     }
-
-    doc.on("pageAdded", () => {
-      addSignatories(doc);
-      addFooter(doc);
-      doc.y = 80; // Start below header/title
-    });
 
     // HEADER
     const now = new Date().toLocaleString("en-PH", { timeZone: "Asia/Manila" });
@@ -152,9 +145,7 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     doc.moveDown();
     doc.fontSize(20).fillColor("#004d40").text(`Report: ${type.toUpperCase()}`, { align: "center" });
     doc.moveDown();
-
-    // Reserve vertical space for header/title
-    doc.y = 80;
+    doc.y = 80; // Reserve vertical space for header
 
     // CONTENT SECTIONS
     if (receivedFiles.length || type === "received" || type === "all") {
@@ -211,9 +202,8 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       doc.moveDown();
     }
 
-    // FOOTER & SIGNATORIES
-    addSignatories(doc);
-    addFooter(doc);
+    // FOOTER & SIGNATORIES (once per page)
+    addFooterAndSignatories(doc);
 
     doc.end();
   } catch (err) {
