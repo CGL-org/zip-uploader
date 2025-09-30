@@ -161,34 +161,68 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       doc.moveDown();
     }
 
-    const currentUser = req.session?.user?.full_name || "Unknown User";
-    const margin = 50; 
-    const signText = "Approved by: ________________________";
+const currentUser = req.session?.user?.full_name || "Unknown User";
+const margin = 50; 
+const signText = "Approved by: ________________________";
 
-    function addSignatories(doc) {
-      const signY = doc.page.height - 150; 
-      doc.fontSize(12).fillColor("black").text(`Printed by: ${currentUser}`, margin, signY);
-      const approvedX = doc.page.width - margin - doc.widthOfString(signText);
-      doc.text(signText, approvedX, signY);
-    }
+function addSignatories(doc) {
+  // Always place signatories at the bottom of the page, above footer
+  const bottomMargin = 60; // distance from bottom of page
+  const y = doc.page.height - bottomMargin;
 
-    function addFooter(doc) {
-      const bottomY = doc.page.height - 30; 
-      doc.fontSize(10).fillColor("gray").text(
-        "https://bottle-scanner.onrender.com",
-        margin,
-        bottomY,
-        { lineBreak: false }
-      );
-    }
+  // "Printed by"
+  doc.fontSize(12).fillColor("black")
+     .text(`Printed by: ${currentUser}`, margin, y);
 
-    addSignatories(doc);
-    addFooter(doc);
+  // "Approved by"
+  const approvedX = doc.page.width - margin - doc.widthOfString(signText);
+  doc.text(signText, approvedX, y);
+}
 
-    doc.on("pageAdded", () => {
-      addSignatories(doc);
-      addFooter(doc);
-    });
+function addFooter(doc) {
+  const bottomY = doc.page.height - 30; 
+  doc.fontSize(10).fillColor("gray").text(
+    "https://bottle-scanner.onrender.com",
+    margin,
+    bottomY,
+    { lineBreak: false }
+  );
+}
+
+// Before writing any data, reserve space at the bottom for signatories + footer
+const bottomReservedSpace = 80; // total space to reserve
+doc.y = margin; // start from top
+
+function addTextWithAutoPage(doc, text) {
+  const pageHeight = doc.page.height;
+  const spaceNeeded = doc.heightOfString(text);
+
+  // If writing text would overlap signatories, add new page
+  if (doc.y + spaceNeeded > pageHeight - bottomReservedSpace) {
+    doc.addPage();
+    doc.y = margin;
+  }
+  doc.text(text);
+}
+
+// Example usage instead of doc.text(...) directly:
+if (data && data.length > 0) {
+  data.forEach(f => addTextWithAutoPage(doc, `- ${f.name}`));
+} else {
+  addTextWithAutoPage(doc, "No files found.");
+}
+
+// After all content
+addSignatories(doc);
+addFooter(doc);
+
+// Add listeners for new pages
+doc.on("pageAdded", () => {
+  addSignatories(doc);
+  addFooter(doc);
+  doc.y = margin; // reset cursor to top after page break
+});
+
 
     doc.end();
   } catch (err) {
