@@ -1,4 +1,3 @@
-// routes/print.js
 import express from "express";
 import { createClient } from "@supabase/supabase-js";
 import PDFDocument from "pdfkit";
@@ -16,7 +15,6 @@ const RECEIVED_BUCKET = "Received_Files";
 const EXTRACTED_BUCKET = "Extracted_Files";
 const COMPLETED_BUCKET = "Completed";
 
-// 📑 Print page (selection)
 router.get("/", async (req, res) => {
   const isAdmin = req.session.user?.role === "admin";
 
@@ -69,7 +67,6 @@ button:hover { background:#00796b; }
   `);
 });
 
-// 📊 Generate PDF reports
 router.post("/generate", express.urlencoded({ extended: true }), async (req, res) => {
   const type = req.body.reportType;
   const isAdmin = req.session.user?.role === "admin";
@@ -77,23 +74,20 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
   try {
 
     await logAction(req, "Generated PDF report");
-    // Create PDF
+
     const landscape = (type === "accounts" || type === "all");
     const doc = new PDFDocument({ margin: 40, layout: landscape ? "landscape" : "portrait" });
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `inline; filename="report-${type}.pdf"`);
     doc.pipe(res);
 
-    // 📅 Date (top-right)
     const now = new Date().toLocaleString();
     doc.fontSize(10).fillColor("gray").text(`Date Printed: ${now}`, { align: "right" });
 
-    // Title
     doc.moveDown();
     doc.fontSize(20).fillColor("#004d40").text(`Report: ${type.toUpperCase()}`, { align: "center" });
     doc.moveDown();
 
-    // 📥 Received Files
     if (type === "received" || type === "all") {
       const { data, error } = await supabase.storage.from(RECEIVED_BUCKET).list();
       if (error) throw error;
@@ -107,7 +101,6 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       doc.moveDown();
     }
 
-    // 📂 Extracted Files
     if (type === "extracted" || type === "all") {
       const { data, error } = await supabase.storage.from(EXTRACTED_BUCKET).list();
       if (error) throw error;
@@ -121,7 +114,6 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       doc.moveDown();
     }
 
-    // ✅ Completed Files
     if (type === "completed" || type === "all") {
       const { data, error } = await supabase.storage.from(COMPLETED_BUCKET).list();
       if (error) throw error;
@@ -135,7 +127,6 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       doc.moveDown();
     }
 
-    // 👥 Accounts
     if (isAdmin && (type === "accounts" || type === "all")) {
       const { data, error } = await supabase
         .from("users")
@@ -145,7 +136,6 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       doc.fontSize(14).fillColor("#009688").text("User Accounts");
       doc.moveDown(0.5);
 
-      // Table header
       doc.fontSize(12).fillColor("black");
       const startY = doc.y;
       doc.text("ID", 50, startY);
@@ -154,12 +144,10 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       doc.text("Email", 480, startY);
       doc.text("Contact", 660, startY);
 
-      // Divider line
       doc.moveDown(0.2);
       doc.moveTo(50, doc.y).lineTo(750, doc.y).stroke();
       doc.moveDown(0.5);
 
-      // Rows
       data.forEach(acc => {
         const y = doc.y;
         doc.text(acc.id, 50, y, { width: 200 });
@@ -173,20 +161,19 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       doc.moveDown();
     }
 
-    // 📌 Footer signatories and footer link
     const currentUser = req.session?.user?.full_name || "Unknown User";
-    const margin = 50; // left/right margin
+    const margin = 50; 
     const signText = "Approved by: ________________________";
 
     function addSignatories(doc) {
-      const signY = doc.page.height - 150; // fixed height above footer
+      const signY = doc.page.height - 150; 
       doc.fontSize(12).fillColor("black").text(`Printed by: ${currentUser}`, margin, signY);
       const approvedX = doc.page.width - margin - doc.widthOfString(signText);
       doc.text(signText, approvedX, signY);
     }
 
     function addFooter(doc) {
-      const bottomY = doc.page.height - 30; // bottom margin
+      const bottomY = doc.page.height - 30; 
       doc.fontSize(10).fillColor("gray").text(
         "https://bottle-scanner.onrender.com",
         margin,
@@ -195,17 +182,14 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       );
     }
 
-    // Add to first page
     addSignatories(doc);
     addFooter(doc);
 
-    // Ensure signatories and footer are added on every new page
     doc.on("pageAdded", () => {
       addSignatories(doc);
       addFooter(doc);
     });
 
-    // Finalize PDF
     doc.end();
   } catch (err) {
     console.error("Error generating report:", err.message);
