@@ -1,4 +1,3 @@
-// index.js
 import express from "express";
 import multer from "multer";
 import { createClient } from "@supabase/supabase-js";
@@ -16,7 +15,6 @@ import { logAction } from "./utils/logger.js";
 import logpageRoutes from "./routes/logpage.js";
 dotenv.config();
 
-// Supabase config
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const BUCKET = process.env.SUPABASE_BUCKET || "Receive_Files";
@@ -31,7 +29,6 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const app = express();
 
-// Middleware
 app.use(
   helmet({
     contentSecurityPolicy: false,
@@ -41,7 +38,6 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ Session must come before routes
 app.use(
   session({
     secret: "supersecretkey", // better: process.env.SESSION_SECRET
@@ -50,21 +46,17 @@ app.use(
   })
 );
 
-// Middleware for auth
 function requireLogin(req, res, next) {
   if (!req.session.user) return res.redirect("/login");
   next();
 }
 
-// ✅ Routes (after session)
 app.use("/print", requireLogin, printRoutes);
 
 
-// Multer
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// File list (storage bucket)
 async function getFileList() {
   const { data, error } = await supabase.storage.from(BUCKET).list("", { limit: 1000 });
   if (error) throw new Error(error.message);
@@ -73,8 +65,6 @@ async function getFileList() {
     return { ...f, publicUrl: g?.data?.publicUrl || null };
   });
 }
-
-
 
 // ---------- LOGIN PAGE ----------
 app.get("/login", (req, res) => {
@@ -160,7 +150,6 @@ await logAction(req, "login");
   }
 });
 
-// Logout
 app.get("/logout", async (req, res) => {
   await logAction(req, "logout"); 
   req.session.destroy(() => res.redirect("/login"));
@@ -170,12 +159,10 @@ app.get("/logout", async (req, res) => {
 // ---------- DASHBOARD ----------
 app.get("/", requireLogin, async (req, res) => {
   try {
-    // get files from storage bucket (existing behavior)
+
     const files = await getFileList();
     const isAdmin = req.session.user.role === "admin";
 
-    // --- New: counts from DB.storefile by status ---
-    // NOTE: counts use exact table name 'storefile' and status values as you provided.
 async function countBucket(bucket) {
   const { data, error } = await supabase.storage.from(bucket).list("", { limit: 1000 });
   if (error) {
@@ -224,7 +211,6 @@ if (isAdmin) {
       } catch (e) { console.warn("count users err", e.message); }
     }
 
-    // --- New: fetch storefile rows for searchable table ---
     let storefileRows = [];
     try {
       const { data: sfdata, error: sferr } = await supabase
@@ -238,7 +224,6 @@ if (isAdmin) {
       storefileRows = [];
     }
 
-    // safe fallback for profile (use a small placeholder if missing)
     const profileSrc = req.session.user.profile_photo
       ? req.session.user.profile_photo
       : "https://via.placeholder.com/150?text=Profile";
@@ -253,9 +238,9 @@ if (isAdmin) {
       <a href="/logout">🚪 Logout</a>
     `;
 
-    // Build storefile table header based on keys (if rows exist)
+
     const storefileHead = storefileRows.length > 0 ? Object.keys(storefileRows[0]) : [];
-    // Render page
+    
     res.send(`
     <!doctype html>
     <html>
@@ -436,10 +421,6 @@ if (isAdmin) {
         <!-- New searchable storefile DB table -->
         <div class="panel">
 
-
-
-         
-      
 <tbody>
   ${storefileRows.length > 0
     ? storefileRows.map(r => {
@@ -504,7 +485,6 @@ if (isAdmin) {
   }
 });
 
-// Extract ZIP into another bucket
 app.get("/extract/:fileName", requireLogin, async (req, res) => {
   const fileName = req.params.fileName;
   try {
@@ -551,7 +531,7 @@ function formatDateTime() {
   }
 });
 
-// Upload ZIP
+
 app.post("/upload-zip", upload.single("file"), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file attached" });
   try {
@@ -565,12 +545,10 @@ app.post("/upload-zip", upload.single("file"), async (req, res) => {
   }
 });
 
-// Mount routes
 app.use("/extracted", requireLogin, extractedRoutes);
 app.use("/done", requireLogin, doneRouter);
 app.use("/account", requireLogin, accountRoutes);
 app.use("/logpage", requireLogin, logpageRoutes);
 
-// Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
