@@ -98,7 +98,9 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
 
     // ✅ Received Files
     if (type === "received" || type === "all") {
-      const { data, error } = await supabase.storage.from(RECEIVED_BUCKET).list();
+      const { data, error } = await supabase.storage
+        .from(RECEIVED_BUCKET)
+        .list("", { limit: 100, includeMetadata: true });
       if (error) throw error;
       doc.fontSize(14).fillColor("#009688").text("Received Files");
       doc.moveDown(0.5);
@@ -115,7 +117,9 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
 
     // ✅ Extracted Files
     if (type === "extracted" || type === "all") {
-      const { data, error } = await supabase.storage.from(EXTRACTED_BUCKET).list();
+      const { data, error } = await supabase.storage
+        .from(EXTRACTED_BUCKET)
+        .list("", { limit: 100, includeMetadata: true });
       if (error) throw error;
       doc.fontSize(14).fillColor("#009688").text("Extracted Files");
       doc.moveDown(0.5);
@@ -132,7 +136,9 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
 
     // ✅ Completed Files
     if (type === "completed" || type === "all") {
-      const { data, error } = await supabase.storage.from(COMPLETED_BUCKET).list();
+      const { data, error } = await supabase.storage
+      .from(COMPLETED_BUCKET)
+      .list("", { limit: 100, includeMetadata: true });
       if (error) throw error;
       doc.fontSize(14).fillColor("#009688").text("Completed Files");
       doc.moveDown(0.5);
