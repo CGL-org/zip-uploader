@@ -108,14 +108,13 @@ router.get("/", async (req, res) => {
           }
         });
 
-        // Print button → open new route with filters
-        document.getElementById("printBtn").addEventListener("click", () => {
-          const column = filterColumn.value;
-          const query = searchInput.value;
-          window.open(\`/print/print-logs?column=\${column}&query=\${encodeURIComponent(query)}\`, "_blank");
-        });
+// Print button → open new route with filters
+document.getElementById("printBtn").addEventListener("click", () => {
+  const column = filterColumn.value;
+  const query = searchInput.value;
+  window.open(`/logpage/print-logs?column=${column}&query=${encodeURIComponent(query)}`, "_blank");
+});
 
-        
       </script>
     </body>
     </html>
