@@ -4,11 +4,11 @@ import PDFDocument from "pdfkit";
 import dotenv from "dotenv";
 import { logAction } from "../utils/logger.js";
 dotenv.config();
+
 const router = express.Router();
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const RECEIVED_BUCKET = "Received_Files";
@@ -18,8 +18,8 @@ const COMPLETED_BUCKET = "Completed";
 router.get("/", async (req, res) => {
   const isAdmin = req.session.user?.role === "admin";
 
-await logAction(req, "Visited Print Reports page");
-  
+  await logAction(req, "Visited Print Reports page");
+
   res.send(`
 <html>
 <head>
@@ -72,60 +72,27 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
   const isAdmin = req.session.user?.role === "admin";
 
   try {
-
     await logAction(req, "Generated PDF report");
 
-const landscape = (type === "accounts" || type === "all");
-res.setHeader("Content-Type", "application/pdf");
-res.setHeader("Content-Disposition", `inline; filename="report-${type}.pdf"`);
-
-const doc = new PDFDocument({ margin: 40, layout: landscape ? "landscape" : "portrait" });
-doc.pipe(res);
-
-    const now = new Date().toLocaleString("en-PH", { timeZone: "Asia/Manila" });
-    doc.fontSize(10).fillColor("gray").text(`Date Printed: ${now}`, { align: "right" });
-
-    doc.moveDown();
-    doc.fontSize(20).fillColor("#004d40").text(`Report: ${type.toUpperCase()}`, { align: "center" });
-    doc.moveDown();
+    // Fetch all necessary data BEFORE piping PDF
+    let receivedFiles = [], extractedFiles = [], completedFiles = [], usersData = [];
 
     if (type === "received" || type === "all") {
       const { data, error } = await supabase.storage.from(RECEIVED_BUCKET).list();
       if (error) throw error;
-      doc.fontSize(14).fillColor("#009688").text("Received Files");
-      doc.moveDown(0.5);
-      if (data && data.length > 0) {
-        data.forEach(f => doc.fontSize(12).fillColor("black").text(`- ${f.name}`));
-      } else {
-        doc.fontSize(12).fillColor("gray").text("No files found.");
-      }
-      doc.moveDown();
+      receivedFiles = data || [];
     }
 
     if (type === "extracted" || type === "all") {
       const { data, error } = await supabase.storage.from(EXTRACTED_BUCKET).list();
       if (error) throw error;
-      doc.fontSize(14).fillColor("#009688").text("Extracted Files");
-      doc.moveDown(0.5);
-      if (data && data.length > 0) {
-        data.forEach(f => doc.fontSize(12).fillColor("black").text(`- ${f.name}`));
-      } else {
-        doc.fontSize(12).fillColor("gray").text("No files found.");
-      }
-      doc.moveDown();
+      extractedFiles = data || [];
     }
 
     if (type === "completed" || type === "all") {
       const { data, error } = await supabase.storage.from(COMPLETED_BUCKET).list();
       if (error) throw error;
-      doc.fontSize(14).fillColor("#009688").text("Completed Files");
-      doc.moveDown(0.5);
-      if (data && data.length > 0) {
-        data.forEach(f => doc.fontSize(12).fillColor("black").text(`- ${f.name}`));
-      } else {
-        doc.fontSize(12).fillColor("gray").text("No files found.");
-      }
-      doc.moveDown();
+      completedFiles = data || [];
     }
 
     if (isAdmin && (type === "accounts" || type === "all")) {
@@ -133,23 +100,115 @@ doc.pipe(res);
         .from("users")
         .select("id, full_name, username, email, contact_number");
       if (error) throw error;
+      usersData = data || [];
+    }
 
+    // Start PDF
+    const landscape = type === "accounts" || type === "all";
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename="report-${type}.pdf"`);
+
+    const doc = new PDFDocument({ margin: 40, layout: landscape ? "landscape" : "portrait" });
+    doc.pipe(res);
+
+    const margin = 50;
+    const currentUser = req.session?.user?.full_name || "Unknown User";
+    const signText = "Approved by: ________________________";
+    const bottomReservedSpace = 80; // Reserve space for footer/signatories
+
+    function addSignatories(doc) {
+      const y = doc.page.height - 60;
+      doc.fontSize(12).fillColor("black")
+        .text(`Printed by: ${currentUser}`, margin, y);
+
+      const approvedX = doc.page.width - margin - doc.widthOfString(signText);
+      doc.text(signText, approvedX, y);
+    }
+
+    function addFooter(doc) {
+      const bottomY = doc.page.height - 30;
+      doc.fontSize(10).fillColor("gray").text(
+        "https://bottle-scanner.onrender.com",
+        margin,
+        bottomY,
+        { lineBreak: false }
+      );
+    }
+
+    function addTextWithAutoPage(doc, text) {
+      const spaceNeeded = doc.heightOfString(text);
+      if (doc.y + spaceNeeded > doc.page.height - bottomReservedSpace) {
+        doc.addPage();
+        doc.y = margin;
+      }
+      doc.text(text);
+    }
+
+    // Ensure footer/signatories added on new pages
+    doc.on("pageAdded", () => {
+      addSignatories(doc);
+      addFooter(doc);
+      doc.y = margin;
+    });
+
+    // Header
+    const now = new Date().toLocaleString("en-PH", { timeZone: "Asia/Manila" });
+    doc.fontSize(10).fillColor("gray").text(`Date Printed: ${now}`, { align: "right" });
+    doc.moveDown();
+    doc.fontSize(20).fillColor("#004d40").text(`Report: ${type.toUpperCase()}`, { align: "center" });
+    doc.moveDown();
+    doc.y = margin;
+
+    // Write sections
+    if (receivedFiles.length || type === "received" || type === "all") {
+      doc.fontSize(14).fillColor("#009688").text("Received Files");
+      doc.moveDown(0.5);
+      if (receivedFiles.length > 0) {
+        receivedFiles.forEach(f => addTextWithAutoPage(doc, `- ${f.name}`));
+      } else {
+        addTextWithAutoPage(doc, "No files found.");
+      }
+      doc.moveDown();
+    }
+
+    if (extractedFiles.length || type === "extracted" || type === "all") {
+      doc.fontSize(14).fillColor("#009688").text("Extracted Files");
+      doc.moveDown(0.5);
+      if (extractedFiles.length > 0) {
+        extractedFiles.forEach(f => addTextWithAutoPage(doc, `- ${f.name}`));
+      } else {
+        addTextWithAutoPage(doc, "No files found.");
+      }
+      doc.moveDown();
+    }
+
+    if (completedFiles.length || type === "completed" || type === "all") {
+      doc.fontSize(14).fillColor("#009688").text("Completed Files");
+      doc.moveDown(0.5);
+      if (completedFiles.length > 0) {
+        completedFiles.forEach(f => addTextWithAutoPage(doc, `- ${f.name}`));
+      } else {
+        addTextWithAutoPage(doc, "No files found.");
+      }
+      doc.moveDown();
+    }
+
+    if (isAdmin && (type === "accounts" || type === "all")) {
       doc.fontSize(14).fillColor("#009688").text("User Accounts");
       doc.moveDown(0.5);
-
       doc.fontSize(12).fillColor("black");
+
       const startY = doc.y;
       doc.text("ID", 50, startY);
       doc.text("Full Name", 240, startY);
       doc.text("Username", 380, startY);
       doc.text("Email", 480, startY);
       doc.text("Contact", 660, startY);
-
       doc.moveDown(0.2);
       doc.moveTo(50, doc.y).lineTo(750, doc.y).stroke();
       doc.moveDown(0.5);
 
-      data.forEach(acc => {
+      usersData.forEach(acc => {
         const y = doc.y;
         doc.text(acc.id, 50, y, { width: 200 });
         doc.text(acc.full_name || "-", 240, y, { width: 150 });
@@ -158,72 +217,12 @@ doc.pipe(res);
         doc.text(acc.contact_number || "-", 660, y, { width: 700 });
         doc.moveDown();
       });
-
       doc.moveDown();
     }
 
-const currentUser = req.session?.user?.full_name || "Unknown User";
-const margin = 50; 
-const signText = "Approved by: ________________________";
-
-function addSignatories(doc) {
-  // Always place signatories at the bottom of the page, above footer
-  const bottomMargin = 60; // distance from bottom of page
-  const y = doc.page.height - bottomMargin;
-
-  // "Printed by"
-  doc.fontSize(12).fillColor("black")
-     .text(`Printed by: ${currentUser}`, margin, y);
-
-  // "Approved by"
-  const approvedX = doc.page.width - margin - doc.widthOfString(signText);
-  doc.text(signText, approvedX, y);
-}
-
-function addFooter(doc) {
-  const bottomY = doc.page.height - 30; 
-  doc.fontSize(10).fillColor("gray").text(
-    "https://bottle-scanner.onrender.com",
-    margin,
-    bottomY,
-    { lineBreak: false }
-  );
-}
-
-// Before writing any data, reserve space at the bottom for signatories + footer
-const bottomReservedSpace = 80; // total space to reserve
-doc.y = margin; // start from top
-
-function addTextWithAutoPage(doc, text) {
-  const pageHeight = doc.page.height;
-  const spaceNeeded = doc.heightOfString(text);
-
-  // If writing text would overlap signatories, add new page
-  if (doc.y + spaceNeeded > pageHeight - bottomReservedSpace) {
-    doc.addPage();
-    doc.y = margin;
-  }
-  doc.text(text);
-}
-
-// Example usage instead of doc.text(...) directly:
-if (data && data.length > 0) {
-  data.forEach(f => addTextWithAutoPage(doc, `- ${f.name}`));
-} else {
-  addTextWithAutoPage(doc, "No files found.");
-}
-
-// After all content
-addSignatories(doc);
-addFooter(doc);
-
-// Add listeners for new pages
-doc.on("pageAdded", () => {
-  addSignatories(doc);
-  addFooter(doc);
-  doc.y = margin; // reset cursor to top after page break
-});
-
+    // Footer & signatories at end
+    addSignatories(doc);
+    addFooter(doc);
 
     doc.end();
   } catch (err) {
@@ -236,4 +235,3 @@ doc.on("pageAdded", () => {
 });
 
 export default router;
-
