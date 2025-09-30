@@ -17,7 +17,6 @@ const COMPLETED_BUCKET = "Completed";
 
 router.get("/", async (req, res) => {
   const isAdmin = req.session.user?.role === "admin";
-
   await logAction(req, "Visited Print Reports page");
 
   res.send(`
@@ -74,7 +73,6 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
   try {
     await logAction(req, "Generated PDF report");
 
-    // Fetch all necessary data BEFORE piping PDF
     let receivedFiles = [], extractedFiles = [], completedFiles = [], usersData = [];
 
     if (type === "received" || type === "all") {
@@ -103,25 +101,23 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       usersData = data || [];
     }
 
-    // Start PDF
     const landscape = type === "accounts" || type === "all";
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `inline; filename="report-${type}.pdf"`);
 
-    const doc = new PDFDocument({ margin: 40, layout: landscape ? "landscape" : "portrait" });
+    const doc = new PDFDocument({ margin: 50, layout: landscape ? "landscape" : "portrait" });
     doc.pipe(res);
 
-    const margin = 50;
     const currentUser = req.session?.user?.full_name || "Unknown User";
     const signText = "Approved by: ________________________";
-    const bottomReservedSpace = 80; // Reserve space for footer/signatories
+    const bottomReservedSpace = 80;
 
     function addSignatories(doc) {
       const y = doc.page.height - 60;
       doc.fontSize(12).fillColor("black")
-        .text(`Printed by: ${currentUser}`, margin, y);
+        .text(`Printed by: ${currentUser}`, 50, y);
 
-      const approvedX = doc.page.width - margin - doc.widthOfString(signText);
+      const approvedX = doc.page.width - 50 - doc.widthOfString(signText);
       doc.text(signText, approvedX, y);
     }
 
@@ -129,7 +125,7 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       const bottomY = doc.page.height - 30;
       doc.fontSize(10).fillColor("gray").text(
         "https://bottle-scanner.onrender.com",
-        margin,
+        50,
         bottomY,
         { lineBreak: false }
       );
@@ -139,57 +135,52 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       const spaceNeeded = doc.heightOfString(text);
       if (doc.y + spaceNeeded > doc.page.height - bottomReservedSpace) {
         doc.addPage();
-        doc.y = margin;
+        doc.y = 80; // Start below header on new page
       }
       doc.text(text);
     }
 
-    // Ensure footer/signatories added on new pages
     doc.on("pageAdded", () => {
       addSignatories(doc);
       addFooter(doc);
-      doc.y = margin;
+      doc.y = 80; // Start below header/title
     });
 
-    // Header
+    // HEADER
     const now = new Date().toLocaleString("en-PH", { timeZone: "Asia/Manila" });
     doc.fontSize(10).fillColor("gray").text(`Date Printed: ${now}`, { align: "right" });
     doc.moveDown();
     doc.fontSize(20).fillColor("#004d40").text(`Report: ${type.toUpperCase()}`, { align: "center" });
     doc.moveDown();
-    doc.y = margin;
 
-    // Write sections
+    // Reserve vertical space for header/title
+    doc.y = 80;
+
+    // CONTENT SECTIONS
     if (receivedFiles.length || type === "received" || type === "all") {
       doc.fontSize(14).fillColor("#009688").text("Received Files");
       doc.moveDown(0.5);
-      if (receivedFiles.length > 0) {
-        receivedFiles.forEach(f => addTextWithAutoPage(doc, `- ${f.name}`));
-      } else {
-        addTextWithAutoPage(doc, "No files found.");
-      }
+      receivedFiles.length > 0
+        ? receivedFiles.forEach(f => addTextWithAutoPage(doc, `- ${f.name}`))
+        : addTextWithAutoPage(doc, "No files found.");
       doc.moveDown();
     }
 
     if (extractedFiles.length || type === "extracted" || type === "all") {
       doc.fontSize(14).fillColor("#009688").text("Extracted Files");
       doc.moveDown(0.5);
-      if (extractedFiles.length > 0) {
-        extractedFiles.forEach(f => addTextWithAutoPage(doc, `- ${f.name}`));
-      } else {
-        addTextWithAutoPage(doc, "No files found.");
-      }
+      extractedFiles.length > 0
+        ? extractedFiles.forEach(f => addTextWithAutoPage(doc, `- ${f.name}`))
+        : addTextWithAutoPage(doc, "No files found.");
       doc.moveDown();
     }
 
     if (completedFiles.length || type === "completed" || type === "all") {
       doc.fontSize(14).fillColor("#009688").text("Completed Files");
       doc.moveDown(0.5);
-      if (completedFiles.length > 0) {
-        completedFiles.forEach(f => addTextWithAutoPage(doc, `- ${f.name}`));
-      } else {
-        addTextWithAutoPage(doc, "No files found.");
-      }
+      completedFiles.length > 0
+        ? completedFiles.forEach(f => addTextWithAutoPage(doc, `- ${f.name}`))
+        : addTextWithAutoPage(doc, "No files found.");
       doc.moveDown();
     }
 
@@ -220,7 +211,7 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
       doc.moveDown();
     }
 
-    // Footer & signatories at end
+    // FOOTER & SIGNATORIES
     addSignatories(doc);
     addFooter(doc);
 
