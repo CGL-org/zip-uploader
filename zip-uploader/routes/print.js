@@ -149,13 +149,13 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     const now = new Date().toLocaleString("en-PH", { timeZone: "Asia/Manila" });
     doc.fontSize(10).fillColor("gray").text(`Date Printed: ${now}`, { align: "right" });
     doc.moveDown();
-    doc.fontSize(20).fillColor("#004d40").text(`Report: ${type.toUpperCase()}`, { align: "center" });
+    doc.fontSize(20).fillColor("black").text(`Report: ${type.toUpperCase()}`, { align: "center" });
     doc.moveDown();
     doc.y = 120; // Reserve header space
 
     // CONTENT
     if (receivedFiles.length || type === "received" || type === "all") {
-      doc.fontSize(14).fillColor("#009688").text("Received Files");
+      doc.fontSize(14).fillColor("black").text("Received Files");
       doc.moveDown(0.5);
       receivedFiles.length > 0
         ? receivedFiles.forEach(f => addTextWithAutoPage(`- ${f.name}`))
@@ -164,7 +164,7 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     }
 
     if (extractedFiles.length || type === "extracted" || type === "all") {
-      doc.fontSize(14).fillColor("#009688").text("Extracted Files");
+      doc.fontSize(14).fillColor("black").text("Extracted Files");
       doc.moveDown(0.5);
       extractedFiles.length > 0
         ? extractedFiles.forEach(f => addTextWithAutoPage(`- ${f.name}`))
@@ -173,7 +173,7 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     }
 
     if (completedFiles.length || type === "completed" || type === "all") {
-      doc.fontSize(14).fillColor("#009688").text("Completed Files");
+      doc.fontSize(14).fillColor("black").text("Completed Files");
       doc.moveDown(0.5);
       completedFiles.length > 0
         ? completedFiles.forEach(f => addTextWithAutoPage(`- ${f.name}`))
@@ -182,7 +182,7 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     }
 
     if (isAdmin && (type === "accounts" || type === "all")) {
-      doc.fontSize(14).fillColor("#009688").text("User Accounts");
+      doc.fontSize(14).fillColor("black").text("User Accounts");
       doc.moveDown(0.5);
       doc.fontSize(12).fillColor("black");
 
