@@ -149,7 +149,7 @@ router.post("/generate", express.urlencoded({ extended: true }), async (req, res
     const now = new Date().toLocaleString("en-PH", { timeZone: "Asia/Manila" });
     doc.fontSize(10).fillColor("gray").text(`Date Printed: ${now}`, { align: "right" });
     doc.moveDown();
-    doc.fontSize(20).fillColor("black").text(`Report: ${type.toUpperCase()}`, { align: "center" });
+    doc.fontSize(20).fillColor("#004d40").text(`Report: ${type.toUpperCase()}`, { align: "center" });
     doc.moveDown();
     doc.y = 120; // Reserve header space
 
